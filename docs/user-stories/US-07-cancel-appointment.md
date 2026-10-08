@@ -23,7 +23,7 @@
 **AC-07.1: Cancel a future appointment**
 Given appointment `A` is CONFIRMED for 2026-10-12 09:30
 When the client cancels `A`
-Then the response is 200 with status CANCELLED and `cancelledAt` = `2026-10-11T10:00:00+07:00`
+Then the response is 200 with status CANCELLED and `cancelledAt` = `2026-10-11T10:00:00`
 
 **AC-07.2: Cancellation frees resources**
 Given C3 has appointment `A` for EV_BATTERY_CHECK at 09:00 with T3 on B3
@@ -37,13 +37,13 @@ When the client requests availability for D1, EV_BATTERY_CHECK, 2026-10-12
 Then the 09:00 slot is included
 
 **AC-07.4: Cancelling twice**
-Given `A` was cancelled at `2026-10-11T10:00:00+07:00`
-And the clock then moves to `2026-10-11T11:00:00+07:00`
+Given `A` was cancelled at `2026-10-11T10:00:00`
+And the clock then moves to `2026-10-11T11:00:00`
 When the client cancels `A` again
-Then the response is 200 with `cancelledAt` still `2026-10-11T10:00:00+07:00`
+Then the response is 200 with `cancelledAt` still `2026-10-11T10:00:00`
 
 **AC-07.5: Started appointments cannot be cancelled**
-Given the clock is `2026-10-12T09:00:00+07:00`
+Given the clock is `2026-10-12T09:00:00`
 And `A` is CONFIRMED starting at 09:00
 When the client cancels `A`
 Then the response is 422 `APPOINTMENT_ALREADY_STARTED`

@@ -12,13 +12,13 @@
 
 `GET /api/v1/dealerships/{dealershipId}/availability?serviceTypeId={uuid}&date={yyyy-MM-dd}`
 
-`date` is the dealership's local date.
+`date` is a calendar date (Vietnam time, GR-01).
 
 ```json
 {
   "dealershipId": "uuid", "serviceTypeId": "uuid", "date": "2026-10-12",
-  "timezone": "Asia/Ho_Chi_Minh", "durationMinutes": 30,
-  "slots": [ { "startTime": "2026-10-12T08:00:00+07:00", "endTime": "2026-10-12T08:30:00+07:00" } ]
+  "durationMinutes": 30,
+  "slots": [ { "startTime": "2026-10-12T08:00:00", "endTime": "2026-10-12T08:30:00" } ]
 }
 ```
 
@@ -28,14 +28,15 @@
 - Start times at or before "now" are excluded.
 - Slots are sorted by `startTime` ascending.
 - Availability is a snapshot, not a reservation. Booking re-checks everything.
+- This endpoint is how customers choose a start time. The booking API does not suggest alternatives (see US-03).
 
 ## Acceptance criteria
 
 **AC-02.1: Full day with no appointments**
 Given no appointments
 When the client requests availability for D1, OIL_CHANGE, 2026-10-12
-Then the response is 200 with `durationMinutes` 30 and `timezone` `Asia/Ho_Chi_Minh`
-And there are exactly 35 slots, the first 08:00–08:30 and the last 16:30–17:00, all with offset `+07:00`
+Then the response is 200 with `durationMinutes` 30
+And there are exactly 35 slots, the first 08:00–08:30 and the last 16:30–17:00
 
 **AC-02.2: Only qualified technician is busy**
 Given T1 has an appointment 09:00–10:30 on B1
@@ -61,12 +62,12 @@ When the client requests availability for D1, OIL_CHANGE, 2026-10-18 (a Sunday)
 Then the response is 200 with `slots: []`
 
 **AC-02.6: Past start times excluded today**
-Given the clock is `2026-10-12T10:05:00+07:00`
+Given the clock is `2026-10-12T10:05:00`
 When the client requests availability for D1, OIL_CHANGE, 2026-10-12
 Then the first slot is 10:15–10:45
 
 **AC-02.7: Past date**
-Given the default clock (`2026-10-11T10:00:00+07:00`)
+Given the default clock (`2026-10-11T10:00:00`)
 When the client requests availability for D1, OIL_CHANGE, 2026-10-10
 Then the response is 200 with `slots: []`
 
@@ -91,5 +92,5 @@ Then the OIL_CHANGE 09:00 slot at D1 is **not** included, even though T4 (inacti
 
 ## Notes for implementer
 
-- Put the calculation in one component (e.g. `AvailabilityCalculator`). US-03 reuses it to suggest alternatives.
+- Put the calculation in one component (e.g. `AvailabilityCalculator`) with no web or database code, so it can be unit tested in isolation. US-09 (weekly availability) reuses it for each day.
 - Load appointments for the whole day in a fixed number of queries. Never query the database once per slot.

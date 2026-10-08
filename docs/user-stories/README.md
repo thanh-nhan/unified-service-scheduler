@@ -1,6 +1,6 @@
 # User Stories: Unified Service Scheduler
 
-**Status:** DRAFT, pending PO approval · **Version:** 0.1 · **Date:** 2026-10-08
+**Status:** APPROVED · **Version:** 0.3 · **Date:** 2026-10-08
 
 | Role | Responsibility |
 |---|---|
@@ -21,17 +21,18 @@
 |---|---|---|---|---|
 | 1 | E-01 | Project foundation (enabler) | Must | none |
 | 2 | US-01 | Browse dealerships and service types | Must | E-01 |
-| 3 | US-02 | Check availability | Must | US-01 |
-| 4 | US-03 | Book an appointment | Must | US-02 |
-| 5 | US-04 | Booking validation | Must | US-03 |
-| 6 | US-05 | Reliable booking under concurrency and retries | Must | US-03 |
-| 7 | US-06 | View an appointment | Must | US-03 |
-| 8 | US-07 | Cancel an appointment | Must | US-06 |
-| 9 | E-02 | Observability (enabler) | Must | US-03 |
-| 10 | E-03 | API documentation and client harness (enabler) | Must | US-07 |
-| 11 | US-08 | List my appointments | Should | US-06 |
+| 3 | US-02 | Check availability (one day) | Must | US-01 |
+| 4 | US-09 | View weekly availability | Must | US-02 |
+| 5 | US-03 | Book an appointment | Must | US-02 |
+| 6 | US-04 | Booking validation | Must | US-03 |
+| 7 | US-05 | Reliable booking under concurrency and retries | Must | US-03 |
+| 8 | US-06 | View an appointment | Must | US-03 |
+| 9 | US-07 | Cancel an appointment | Must | US-06 |
+| 10 | E-02 | Observability (enabler) | Must | US-03 |
+| 11 | E-03 | API documentation and client harness (enabler) | Must | US-07 |
+| 12 | US-08 | List my appointments | Should | US-06 |
 
-Availability (US-02) comes before booking because the booking's 409 response reuses the availability calculation to suggest alternatives.
+Availability (US-02) comes before booking because customers pick a start time from the available slots, usually from the weekly view (US-09). If the chosen slot is taken in the meantime, booking returns 409 and the customer picks another slot. The API does not suggest alternatives.
 
 ## Decisions requiring PO confirmation
 
@@ -39,18 +40,19 @@ Each item below is drafted with the stated assumption. Confirm or change it befo
 
 1. **Vehicle double-booking.** A vehicle cannot have two overlapping confirmed appointments (AC-03.10). *Assumed: yes.*
 2. **Cancellation cut-off.** Customers can cancel any time before the appointment starts, with no fee (US-07). *Assumed: no earlier cut-off.*
-3. **Alternatives on conflict.** Up to 3 slots closest to the requested time on the same day; if none, the first 3 slots of the next open day within 7 days (AC-03.5, AC-03.11).
-4. **Slot grid.** Start times on a 15-minute grid (GR-03).
-5. **Booking horizon.** No maximum days-ahead limit in the MVP.
-6. **Service catalogue.** Service types are global. A dealership without a qualified technician or suitable bay simply has no availability for that service (AC-02.8).
-7. **Confirmation details.** The customer sees the assigned technician's name and bay name.
+3. **Slot grid.** Start times on a 15-minute grid (GR-03).
+4. **Booking horizon.** No maximum days-ahead limit in the MVP.
+5. **Service catalogue.** Service types are global. A dealership without a qualified technician or suitable bay simply has no availability for that service (AC-02.8).
+6. **Confirmation details.** The customer sees the assigned technician's name and bay name.
 
 ## Out of scope (MVP)
 
-Authentication (`customerId` is sent in the request; in production it would come from a JWT), rescheduling, multiple services per appointment, technician shifts, breaks and leave, public holidays, buffer time between appointments, notifications, payments, and admin screens for managing resources (seed data only).
+Multiple time zones (Vietnam time only), alternative-slot suggestions on conflict (the UI uses US-02 and US-09 instead), authentication (`customerId` is sent in the request; in production it would come from a JWT), rescheduling, multiple services per appointment, technician shifts, breaks and leave, public holidays, buffer time between appointments, notifications, payments, and admin screens for managing resources (seed data only).
 
 ## Change log
 
 | Version | Date | Change | Approved by |
 |---|---|---|---|
-| 0.1 | 2026-10-08 | Initial draft | pending |
+| 0.1 | 2026-10-08 | Initial draft | n/a |
+| 0.2 | 2026-10-08 | PO review: removed alternative slots from the 409 response (US-03, US-05, E-03). Single time zone (Vietnam): offsets and dealership timezone removed from all stories | n/a |
+| 0.3 | 2026-10-08 | Added US-09 (weekly availability, Monday to Sunday). US-09 keeps its ID; it is implemented right after US-02 | pending |

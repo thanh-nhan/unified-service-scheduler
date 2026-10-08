@@ -11,7 +11,7 @@
 ## API
 
 - `GET /api/v1/dealerships` returns a JSON array sorted by `name` ascending:
-  `[{ "id", "name", "timezone", "openingHours": [{ "dayOfWeek": "MONDAY", "opensAt": "08:00", "closesAt": "17:00" }] }]`
+  `[{ "id", "name", "openingHours": [{ "dayOfWeek": "MONDAY", "opensAt": "08:00", "closesAt": "17:00" }] }]`
   `openingHours` is ordered MONDAY to SUNDAY, and closed days are omitted.
 - `GET /api/v1/service-types` returns a JSON array sorted by `name` ascending:
   `[{ "id", "code", "name", "durationMinutes" }]`
@@ -23,7 +23,7 @@
 Given the fixture dataset
 When the client calls `GET /api/v1/dealerships`
 Then the response is 200 with 2 items in the order D1, D2
-And D1 has timezone `Asia/Ho_Chi_Minh` and 6 opening-hours entries, MONDAY to SATURDAY, each 08:00–17:00
+And D1 has 6 opening-hours entries, MONDAY to SATURDAY, each 08:00–17:00
 
 **AC-01.2: List service types**
 Given the fixture dataset

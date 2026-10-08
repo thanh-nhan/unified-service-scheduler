@@ -18,7 +18,7 @@
 Given C1 booked OIL_CHANGE for V1 at 09:30 and received appointment id `A`
 When the client calls `GET /api/v1/appointments/A`
 Then the response is 200 with the same fields and values as the booking response
-And `startTime` is `2026-10-12T09:30:00+07:00`
+And `startTime` is `2026-10-12T09:30:00`
 
 **AC-06.2: View a cancelled appointment**
 Given appointment `A` has been cancelled

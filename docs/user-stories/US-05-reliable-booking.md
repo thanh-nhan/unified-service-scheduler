@@ -11,7 +11,7 @@
 ## Business rules
 
 - No two CONFIRMED appointments may overlap for the same technician, the same bay, or the same vehicle, **including when requests arrive at the same moment**.
-- If a booking loses a race for a resource, the system retries with other eligible resources. After 3 attempts, it returns 409 `HIGH_CONTENTION` with alternatives.
+- If a booking loses a race for a resource, the system retries with other eligible resources. After 3 attempts, it returns 409 `HIGH_CONTENTION`.
 - **Idempotency.** Only **successful** bookings are remembered by their `Idempotency-Key`.
   - Same key and same body: return the original appointment with 200, without creating a new one.
   - Same key and a different body: 422 `IDEMPOTENCY_KEY_REUSED`.

@@ -12,7 +12,7 @@
 
 Checks run in this order. The **first** failing check determines the response.
 
-1. Request shape: required fields, UUID formats, timestamp with offset → 400 `VALIDATION_FAILED`
+1. Request shape: required fields, UUID formats, date-time without an offset (GR-01) → 400 `VALIDATION_FAILED`
 2. `Idempotency-Key` header present and non-blank → 400 `IDEMPOTENCY_KEY_MISSING`
 3. Existence, in the order customer, vehicle, dealership, service type → 404 (matching code)
 4. Vehicle belongs to customer → 422 `VEHICLE_NOT_OWNED_BY_CUSTOMER`
@@ -29,8 +29,8 @@ When a booking request omits `serviceTypeId`
 Then the response is 400 `VALIDATION_FAILED`
 And `errors` contains an entry with `field` = `serviceTypeId`
 
-**AC-04.2: Timestamp without offset**
-When `startTime` is `2026-10-12T09:30:00`
+**AC-04.2: Timestamp with an offset**
+When `startTime` is `2026-10-12T09:30:00+07:00` or `2026-10-12T02:30:00Z`
 Then the response is 400 `VALIDATION_FAILED` with an `errors` entry for `startTime`
 
 **AC-04.3: Malformed JSON**
@@ -55,14 +55,14 @@ When C1 books for V2
 Then the response is 422 `VEHICLE_NOT_OWNED_BY_CUSTOMER`
 
 **AC-04.7: Start time in the past**
-Given the clock is `2026-10-12T09:30:00+07:00`
+Given the clock is `2026-10-12T09:30:00`
 When C1 books OIL_CHANGE starting 09:30
 Then the response is 422 `START_TIME_IN_PAST`
 When C1 books OIL_CHANGE starting 09:45
 Then the response is 201
 
 **AC-04.8: Start time not on the grid**
-When `startTime` is `2026-10-12T09:10:00+07:00` or `2026-10-12T09:15:30+07:00`
+When `startTime` is `2026-10-12T09:10:00` or `2026-10-12T09:15:30`
 Then the response is 422 `START_TIME_NOT_ALIGNED`
 
 **AC-04.9: Opening hours**
@@ -76,16 +76,12 @@ Then the response is 422 `START_TIME_NOT_ALIGNED`
 | OIL_CHANGE | 2026-10-12 08:00 | 201 |
 | OIL_CHANGE | 2026-10-12 16:30 | 201 |
 
-**AC-04.10: Other offsets are normalized**
-When C1 books OIL_CHANGE with `startTime` `2026-10-12T02:30:00Z`
-Then the response is 201 with `startTime` `2026-10-12T09:30:00+07:00`
-
-**AC-04.11: Check order**
-When `startTime` is `2026-10-10T09:10:00+07:00` (both in the past and off the grid)
+**AC-04.10: Check order**
+When `startTime` is `2026-10-10T09:10:00` (both in the past and off the grid)
 Then the response is 422 `START_TIME_IN_PAST`
 
-**AC-04.12: No side effects on rejection**
-Given any rejected request in AC-04.1 to AC-04.11
+**AC-04.11: No side effects on rejection**
+Given any rejected request in AC-04.1 to AC-04.10
 Then the number of stored appointments is unchanged
 
 ## Notes for implementer
