@@ -1,6 +1,6 @@
 # User Stories: Unified Service Scheduler
 
-**Status:** APPROVED · **Version:** 0.3 · **Date:** 2026-10-08
+**Status:** APPROVED · **Version:** 0.4 · **Date:** 2026-10-08
 
 | Role | Responsibility |
 |---|---|
@@ -56,3 +56,4 @@ Multiple time zones (Vietnam time only), alternative-slot suggestions on conflic
 | 0.1 | 2026-10-08 | Initial draft | n/a |
 | 0.2 | 2026-10-08 | PO review: removed alternative slots from the 409 response (US-03, US-05, E-03). Single time zone (Vietnam): offsets and dealership timezone removed from all stories | n/a |
 | 0.3 | 2026-10-08 | Added US-09 (weekly availability, Monday to Sunday). US-09 keeps its ID; it is implemented right after US-02. PO decisions: keep US-02 (single day) alongside US-09; `weekStart` must be a Monday, and any other date is rejected with 400 (AC-09.6) | PO, 2026-10-08 |
+| 0.4 | 2026-10-09 | EM decision: build tool changed from Maven to Gradle (`./gradlew build` replaces `./mvnw verify` in E-01, E-03, and the Definition of Done). E-01 stack line aligned with the approved design (Spring Boot 4.1, PostgreSQL 17). No acceptance criteria changed in substance | EM, 2026-10-09 |

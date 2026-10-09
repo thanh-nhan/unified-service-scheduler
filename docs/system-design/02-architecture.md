@@ -49,7 +49,7 @@ flowchart TB
 | Environment | How it runs |
 |---|---|
 | Local / reviewer | `docker compose up --build`: one API container and one PostgreSQL container. The `dev` profile loads the fixture data |
-| Tests | `./mvnw verify`: the API in-process, PostgreSQL via Testcontainers |
+| Tests | `./gradlew build`: the API in-process, PostgreSQL via Testcontainers |
 | Production (described, not built) | 2+ API instances behind a load balancer, managed PostgreSQL with a standby replica, Prometheus and an OTLP collector |
 
 ## 3. Components

@@ -1,6 +1,6 @@
 # 07: Technology choices
 
-Versions are pinned in `pom.xml` (via the Spring Boot parent and Maven Wrapper) so a clean clone builds identically. "Latest patch" means the newest patch release available when implementation starts.
+Versions are pinned in the Gradle version catalog (`gradle/libs.versions.toml`), with the Spring Boot Gradle plugin managing Spring-related versions and the Gradle Wrapper fixing the Gradle version, so a clean clone builds identically. "Latest patch" means the newest patch release available when implementation starts.
 
 | Area | Choice | Why | Alternatives considered |
 |---|---|---|---|
@@ -16,7 +16,7 @@ Versions are pinned in `pom.xml` (via the Spring Boot parent and Maven Wrapper) 
 | Metrics | **Micrometer** with the Prometheus registry | Standard in Spring Boot; Prometheus is the de facto open-source metrics store | Vendor agents |
 | Logging | Spring Boot **structured logging** (JSON, Logstash format) over SLF4J/Logback | Built in, no extra library; includes MDC fields such as `requestId` | Custom Logback JSON encoder |
 | Tracing | **OpenTelemetry** via `spring-boot-starter-opentelemetry` (Micrometer Tracing bridge) | Vendor-neutral traces; trace and span IDs in every log line | Zipkin/Brave (narrower ecosystem) |
-| Build | **Maven** with Maven Wrapper | Reviewers need only a JDK; most common in Spring projects | Gradle |
+| Build | **Gradle** with Gradle Wrapper, **Kotlin DSL** (`build.gradle.kts`) and a version catalog | Reviewers need only a JDK. Fast incremental builds and test filtering (`./gradlew test --tests ...`); the Kotlin DSL is Gradle's default and gives type-checked build scripts with clear errors | Maven (more verbose XML, slower incremental builds); Gradle Groovy DSL (less IDE checking) |
 | Runtime packaging | Docker image (multi-stage build, JRE 21 base) and **Docker Compose** | One command to run the API and database (AC-E01.2) | Kubernetes manifests (out of scope; described in 09) |
 | AI-assisted development | **Cline** in VS Code with **qwen3-coder:30b** via **Ollama**, 32k context | Fully local coding model. Directed by approved stories and this design. See 10 and the README's AI Collaboration Narrative | Aider (kept as fallback) |
 
@@ -33,5 +33,6 @@ The coding model has seen far more Spring Boot 3 code than Spring Boot 4 code. T
 | `@MockBean` | `@MockitoBean` |
 | `@SpringBootTest` gives `MockMvc` | Add `@AutoConfigureMockMvc` explicitly |
 | `org.testcontainers:postgresql` | `org.testcontainers:testcontainers-postgresql` |
+| Maven `pom.xml` examples | Gradle Kotlin DSL: `implementation("...")`, `testImplementation("...")`, `testRuntimeOnly("org.junit.platform:junit-platform-launcher")`, versions from `libs.versions.toml` |
 
-The implementation spike (task 0) confirms these against the actual dependency versions before feature work starts.
+The implementation spike (task 0) confirms these, and the Gradle version required by Spring Boot 4.1, against the actual dependency versions before feature work starts.

@@ -1,7 +1,7 @@
 # System Design: Unified Service Scheduler
 
-**Status:** DRAFT, pending EM approval · **Version:** 0.1 · **Date:** 2026-10-08
-**Requirements baseline:** [User stories v0.3 (approved)](../user-stories/README.md)
+**Status:** APPROVED · **Version:** 0.2 · **Date:** 2026-10-09
+**Requirements baseline:** [User stories v0.4 (approved)](../user-stories/README.md)
 
 This folder is the System Design Document for Scenario A. It explains **how** the approved user stories are built and **why**. The user stories remain the source of truth for **what** the system does. If a design document and a story disagree, the story wins and the design is corrected.
 
@@ -53,4 +53,5 @@ This folder is the System Design Document for Scenario A. It explains **how** th
 
 | Version | Date | Change | Approved by |
 |---|---|---|---|
-| 0.1 | 2026-10-08 | Initial draft based on user stories v0.3 | pending |
+| 0.1 | 2026-10-08 | Initial draft based on user stories v0.3 | EM, 2026-10-09 |
+| 0.2 | 2026-10-09 | Build tool changed from Maven to Gradle (Kotlin DSL, version catalog): 02, 07 | EM, 2026-10-09 |

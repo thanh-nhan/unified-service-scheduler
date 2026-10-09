@@ -118,7 +118,7 @@ These fixed IDs and values are used by the AC, by test setup, and by the `dev` s
 ## Definition of Done (every story)
 
 1. Every AC has at least one test whose `@DisplayName` starts with the AC ID, and all of them pass.
-2. `./mvnw verify` passes on a clean clone, using Testcontainers PostgreSQL (no H2 or other embedded database).
+2. `./gradlew build` passes on a clean clone, using Testcontainers PostgreSQL (no H2 or other embedded database).
 3. Frozen files (`docs/user-stories/**` and acceptance tests marked `// FROZEN`) are unchanged.
 4. New endpoints appear in the OpenAPI document.
 5. The EM has reviewed the change and it is committed as one task per commit.

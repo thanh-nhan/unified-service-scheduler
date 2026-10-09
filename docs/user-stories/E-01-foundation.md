@@ -10,13 +10,13 @@
 
 ## Scope
 
-Java 21, Spring Boot 3.x (the line the coding model knows best), Maven Wrapper, PostgreSQL 16, Flyway, Testcontainers, Docker Compose, Spring Boot Actuator.
+Java 21, Spring Boot 4.1, Gradle Wrapper (Kotlin DSL), PostgreSQL 17, Flyway, Testcontainers, Docker Compose, Spring Boot Actuator. See the system design (07) for versions and reasons.
 
 ## Acceptance criteria
 
 **AC-E01.1: Build and test from a clean clone**
 Given a clean clone, with JDK 21 and Docker installed
-When `./mvnw verify` runs
+When `./gradlew build` runs (`gradlew.bat build` on Windows)
 Then the build succeeds
 And integration tests run against PostgreSQL started by Testcontainers (no H2 or other embedded database)
 

@@ -20,7 +20,7 @@ Then `GET /swagger-ui.html` serves an interactive UI for the API
 
 **AC-E03.3: Committed contract stays in sync**
 Given `docs/openapi.yaml` is committed
-When `./mvnw verify` runs
+When `./gradlew build` runs
 Then a test fails if the committed file differs from the generated document
 
 **AC-E03.4: Demo script**

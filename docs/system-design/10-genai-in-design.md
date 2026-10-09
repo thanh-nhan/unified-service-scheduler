@@ -36,6 +36,7 @@ Two principles shaped the process:
 | Multi-time-zone support: `timestamptz`, a dealership time zone, DST-safe slot stepping | Removed. Single time zone, Vietnam only (ADR-003) | The business has no cross-border customers. Removing it eliminated a whole class of bugs and test cases |
 | Daily availability only | Added a weekly view (US-09), kept the daily one, and required `weekStart` to be a Monday | Matches how customers choose a time. Rejecting non-Monday dates keeps behavior explicit for the coding model |
 | Aider as the coding harness | Cline | The candidate's preference; the design is tool-agnostic and Aider remains the fallback |
+| Maven as the build tool | Gradle (Kotlin DSL) | EM preference; the design was updated in one change (v0.2) with no effect on behavior |
 
 ## 4. Gaps the AI surfaced that the human accepted
 
@@ -56,7 +57,7 @@ These issues were not in the original brief. Writing precise acceptance criteria
 | Recompute every number in the acceptance criteria | Slot counts (35 per day for a 30-minute service; 31 and 21 for a 90-minute service with a busy technician; 26 after 10:05) were recalculated by hand |
 | Cross-document consistency checks | After each PO change, all story files were searched for leftover references (offsets, `alternatives`, renumbered AC IDs) |
 | Ask for alternatives and trade-offs, not just one answer | Concurrency (ADR-002), harness choice, MySQL vs PostgreSQL |
-| Human approval gates with a change log | Stories v0.1 → v0.3; design v0.1 pending |
+| Human approval gates with a change log | Stories v0.1 → v0.4; design v0.1 → v0.2 |
 
 ## 6. Lessons from the design phase
 
