@@ -1,6 +1,6 @@
 # US-07: Cancel an appointment
 
-**Priority:** Must · **Depends on:** US-06 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-06 · **Status:** Approved (v0.3)
 
 ## Story
 

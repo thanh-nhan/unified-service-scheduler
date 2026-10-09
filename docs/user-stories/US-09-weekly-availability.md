@@ -1,6 +1,6 @@
 # US-09: View weekly availability
 
-**Priority:** Must · **Depends on:** US-02 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-02 · **Status:** Approved (v0.3)
 
 ## Story
 

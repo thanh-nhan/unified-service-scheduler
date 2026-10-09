@@ -1,6 +1,6 @@
 # US-05: Reliable booking under concurrency and retries
 
-**Priority:** Must · **Depends on:** US-03 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-03 · **Status:** Approved (v0.3)
 
 ## Story
 

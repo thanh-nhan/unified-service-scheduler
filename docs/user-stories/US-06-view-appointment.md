@@ -1,6 +1,6 @@
 # US-06: View an appointment
 
-**Priority:** Must · **Depends on:** US-03 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-03 · **Status:** Approved (v0.3)
 
 ## Story
 

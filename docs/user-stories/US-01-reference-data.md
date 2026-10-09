@@ -1,6 +1,6 @@
 # US-01: Browse dealerships and service types
 
-**Priority:** Must · **Depends on:** E-01 · **Status:** Draft
+**Priority:** Must · **Depends on:** E-01 · **Status:** Approved (v0.3)
 
 ## Story
 

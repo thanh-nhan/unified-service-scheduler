@@ -1,6 +1,6 @@
 # E-02: Observability (enabler)
 
-**Priority:** Must (AC-E02.6 is Should) · **Depends on:** US-03 · **Status:** Draft
+**Priority:** Must (AC-E02.6 is Should) · **Depends on:** US-03 · **Status:** Approved (v0.3)
 
 ## Story
 

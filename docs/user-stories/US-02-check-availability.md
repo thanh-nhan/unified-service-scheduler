@@ -1,6 +1,6 @@
 # US-02: Check availability
 
-**Priority:** Must · **Depends on:** US-01 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-01 · **Status:** Approved (v0.3)
 
 ## Story
 

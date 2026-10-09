@@ -1,6 +1,6 @@
 # US-08: List my appointments
 
-**Priority:** Should · **Depends on:** US-06 · **Status:** Draft
+**Priority:** Should · **Depends on:** US-06 · **Status:** Approved (v0.3)
 
 ## Story
 

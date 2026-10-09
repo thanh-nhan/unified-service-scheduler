@@ -1,6 +1,6 @@
 # E-03: API documentation and client harness (enabler)
 
-**Priority:** Must · **Depends on:** US-07 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-07 · **Status:** Approved (v0.3)
 
 ## Story
 

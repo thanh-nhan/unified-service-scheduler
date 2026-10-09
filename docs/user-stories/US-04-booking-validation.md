@@ -1,6 +1,6 @@
 # US-04: Booking validation
 
-**Priority:** Must · **Depends on:** US-03 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-03 · **Status:** Approved (v0.3)
 
 ## Story
 

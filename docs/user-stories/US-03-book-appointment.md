@@ -1,6 +1,6 @@
 # US-03: Book an appointment
 
-**Priority:** Must · **Depends on:** US-02 · **Status:** Draft
+**Priority:** Must · **Depends on:** US-02 · **Status:** Approved (v0.3)
 
 ## Story
 

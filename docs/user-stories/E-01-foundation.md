@@ -1,6 +1,6 @@
 # E-01: Project foundation (enabler)
 
-**Priority:** Must · **Depends on:** none · **Status:** Draft
+**Priority:** Must · **Depends on:** none · **Status:** Approved (v0.3)
 
 ## Story
 
