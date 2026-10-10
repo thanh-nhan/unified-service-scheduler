@@ -1,6 +1,6 @@
 # T05: Error model, date-time parsing, and request ID
 
-**Stories:** GR-01, GR-10, GR-11 in `00-conventions.md`; E-02 (AC-E02.1, AC-E02.2) · **Type:** single task
+**Stories:** GR-01, GR-10, GR-11 in `00-conventions.md`; E-02 (AC-E02.1, AC-E02.2) · **Type:** single task, two Aider sessions
 
 ## Goal
 
@@ -24,6 +24,14 @@ Build the shared error handling every endpoint will use, strict local date-time 
 | Create | `src/test/java/com/keyloop/scheduler/common/ErrorHandlingTest.java` |
 | Create | `src/test/java/com/keyloop/scheduler/common/TestErrorController.java` (test-only controller) |
 | Create | `src/test/java/com/keyloop/scheduler/common/LocalDateTimesTest.java` |
+| Create | `src/test/java/com/keyloop/scheduler/common/RequestIdTest.java` |
+
+## Sessions
+
+| Session | Editable files | Test |
+|---|---|---|
+| 1 | `ErrorCode`, `ApiException`, `GlobalExceptionHandler`, `TestErrorController`, `ErrorHandlingTest` | `/test .\gradlew.bat test --tests "com.keyloop.scheduler.common.ErrorHandlingTest" --console=plain` |
+| 2 | `LocalDateTimes`, `LocalDateTimesTest`, `RequestIdFilter`, `RequestIdTest` (session 1 files read-only) | the "Done when" command below |
 
 ## Specification
 
@@ -51,7 +59,8 @@ Build the shared error handling every endpoint will use, strict local date-time 
 
 ## Tests
 
-- `ErrorHandlingTest` (`@WebMvcTest` with the test controller, or extends `IntegrationTest`): one test per mapping row, plus:
+- `ErrorHandlingTest` (`@WebMvcTest` with the test controller, or extends `IntegrationTest`): one test per mapping row. In session 1 the `requestId` property may be null.
+- `RequestIdTest` (session 2):
   - `AC-E02.1`: request with `X-Request-Id: abc-123` gets it back; request without it gets a UUID.
   - `AC-E02.2`: a problem response's `requestId` equals its `X-Request-Id` header.
 - `LocalDateTimesTest`: plain unit test for the accept and reject cases above.

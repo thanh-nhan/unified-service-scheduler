@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+.aider.chat.history.md
+.aider.conf.yml
+.aider.input.history
+.aider.model.settings.yml
+.aider.tags.cache.v4/cache.db
+.aider.tags.cache.v4/cache.db-shm
+.aider.tags.cache.v4/cache.db-wal

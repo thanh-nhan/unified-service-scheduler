@@ -12,6 +12,8 @@ A running record of how the AI agents were directed and corrected. It feeds the 
 | 2026-10-09 | Planning | Claude (planner) | EM asked to show available booking time slots for chosen service in week view so future UI can present the availability to users | User stories review | Claude created UC-09|
 | 2026-10-09 | Planning | Claude (planner) | EM/PO approved UCs and asked to break into tasks | User stories review | Claude created tasks|
 | 2026-10-09 | Planning | Claude (planner) | EM asked to switch to Gradle | Task review | Claude updated relevant tasks|
+| 2026-10-09 | T00 | EM | Tests failed: PostgreSQL rejected the JVM time zone `Asia/Saigon` (legacy alias sent by the JDBC driver) | Test report | `-Duser.timezone=Asia/Ho_Chi_Minh` for tests and bootRun |
+| 2026-10-10 | T01 | Cline + qwen2.5-coder:14b | Reported files created and updated, but nothing changed on disk | EM checked the filesystem | Root cause: model could not drive Cline's tool calls. Switched to Aider |
 | | | | | | |
 
 ## Process changes
@@ -21,5 +23,7 @@ A running record of how the AI agents were directed and corrected. It feeds the 
 | 2026-10-08 | Switched coding harness from Aider to Cline | EM preference; added Plan-mode review and manual commits |
 | 2026-10-09 | Switched build from Maven to Gradle (Kotlin DSL) | EM preference |
 | 2026-10-09 | Add SpringBoot 4.1.1 and Gradle 9.7.1 | Framework setup |
+| 2026-10-10 | qwen3-coder:30b replaced by qwen2.5-coder:14b (Act) and qwen3.5:9b (Plan) | 30B model did not fit in laptop memory |
+| 2026-10-10 | Switched coding harness from Cline to Aider; `.clinerules` replaced by `CONVENTIONS.md`; T01, T03, T05, T12, T14 split into smaller sessions | Smaller model could not use Cline's tools reliably; Aider needs no tool calling |
 | | | |
 

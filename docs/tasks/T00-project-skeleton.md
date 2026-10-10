@@ -21,7 +21,7 @@ Spring Initializr produces the correct Spring Boot 4.1 dependency coordinates, G
 
 2. Add dependencies (names as shown in Initializr): **Spring Web**, **Validation**, **Spring Data JPA**, **PostgreSQL Driver**, **Flyway Migration**, **Spring Boot Actuator**, **Prometheus**, **Testcontainers**. If **OpenTelemetry** is listed, add it too; otherwise T17 adds it.
 3. Click **Explore** and note the versions shown (Spring Boot, Gradle in `gradle-wrapper.properties`, Testcontainers). Record them in `docs/ai-collaboration-log.md` under Process changes.
-4. Download and unzip into the repo root, keeping the existing `.git`, `docs/`, and `.clinerules`. The main class should be `src/main/java/com/keyloop/scheduler/SchedulerApplication.java`. Rename it if Initializr generated a different name.
+4. Download and unzip into the repo root, keeping the existing `.git` and `docs/`. The main class should be `src/main/java/com/keyloop/scheduler/SchedulerApplication.java`. Rename it if Initializr generated a different name.
 5. Start Docker Desktop, then run:
 
    ```powershell

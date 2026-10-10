@@ -18,11 +18,11 @@ Versions are pinned in the Gradle version catalog (`gradle/libs.versions.toml`),
 | Tracing | **OpenTelemetry** via `spring-boot-starter-opentelemetry` (Micrometer Tracing bridge) | Vendor-neutral traces; trace and span IDs in every log line | Zipkin/Brave (narrower ecosystem) |
 | Build | **Gradle** with Gradle Wrapper, **Kotlin DSL** (`build.gradle.kts`) and a version catalog | Reviewers need only a JDK. Fast incremental builds and test filtering (`./gradlew test --tests ...`); the Kotlin DSL is Gradle's default and gives type-checked build scripts with clear errors | Maven (more verbose XML, slower incremental builds); Gradle Groovy DSL (less IDE checking) |
 | Runtime packaging | Docker image (multi-stage build, JRE 21 base) and **Docker Compose** | One command to run the API and database (AC-E01.2) | Kubernetes manifests (out of scope; described in 09) |
-| AI-assisted development | **Cline** in VS Code with **qwen3-coder:30b** via **Ollama**, 32k context | Fully local coding model. Directed by approved stories and this design. See 10 and the README's AI Collaboration Narrative | Aider (kept as fallback) |
+| AI-assisted development | **Aider** with **qwen2.5-coder:14b** via **Ollama**, 16k context, whole-file edits | Fully local and fits the laptop's memory. Aider applies edits from plain-text output, so it does not depend on the model's tool-calling ability. Directed by approved stories, this design, and `CONVENTIONS.md`. See 10 and the README's AI Collaboration Narrative | Cline with qwen3-coder:30b (did not fit in memory); Cline with qwen2.5-coder:14b (reported edits it never made) |
 
 ## Spring Boot 4 notes for the coding model
 
-The coding model has seen far more Spring Boot 3 code than Spring Boot 4 code. These differences go into `.clinerules` so it does not generate Spring Boot 3 code:
+The coding model has seen far more Spring Boot 3 code than Spring Boot 4 code. These differences go into `CONVENTIONS.md` (always loaded by Aider) so it does not generate Spring Boot 3 code:
 
 | Spring Boot 3 habit | Spring Boot 4 |
 |---|---|

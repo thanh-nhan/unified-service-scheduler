@@ -7,12 +7,12 @@
 | Product Owner | Approves stories and acceptance criteria (AC) |
 | Engineering Manager | Approves design, task breakdown, and code reviews |
 | Planning AI (Claude) | Drafts stories, design, and tasks |
-| Coding AI (qwen3-coder:30b via Cline + Ollama) | Implements tasks against approved AC |
+| Coding AI (qwen2.5-coder:14b via Aider + Ollama) | Implements tasks against approved AC |
 
 ## How these files are used
 
 - **Contract.** Once approved, story files are frozen. Any change needs PO/EM approval and a new entry in the change log below.
-- **Coding sessions.** Each Cline task starts fresh, with project rules from `.clinerules/`. The task prompt tells the model to read `00-conventions.md` and exactly **one** story file, and never to edit anything under `docs/`. Files are kept small to fit a 32k context window alongside the code.
+- **Coding sessions.** Each Aider session starts fresh with `CONVENTIONS.md` loaded. The EM loads the task file, `00-conventions.md`, and exactly **one** story file read-only, so the agent cannot change them. Files are kept small to fit a 16k context window alongside the code.
 - **Traceability.** Every AC has an ID (e.g. `AC-03.2`). The test that verifies it puts that ID at the start of its `@DisplayName`. Running `grep -rn "AC-" src/test` produces the traceability matrix.
 
 ## Backlog (implementation order)
@@ -57,3 +57,4 @@ Multiple time zones (Vietnam time only), alternative-slot suggestions on conflic
 | 0.2 | 2026-10-08 | PO review: removed alternative slots from the 409 response (US-03, US-05, E-03). Single time zone (Vietnam): offsets and dealership timezone removed from all stories | n/a |
 | 0.3 | 2026-10-08 | Added US-09 (weekly availability, Monday to Sunday). US-09 keeps its ID; it is implemented right after US-02. PO decisions: keep US-02 (single day) alongside US-09; `weekStart` must be a Monday, and any other date is rejected with 400 (AC-09.6) | PO, 2026-10-08 |
 | 0.4 | 2026-10-09 | EM decision: build tool changed from Maven to Gradle (`./gradlew build` replaces `./mvnw verify` in E-01, E-03, and the Definition of Done). E-01 stack line aligned with the approved design (Spring Boot 4.1, PostgreSQL 17). No acceptance criteria changed in substance | EM, 2026-10-09 |
+| 0.4.1 | 2026-10-10 | Process only: coding agent changed to Aider with qwen2.5-coder:14b. No requirement changed | EM, 2026-10-10 |

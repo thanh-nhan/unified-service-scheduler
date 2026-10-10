@@ -8,7 +8,7 @@ This section describes how generative AI was used to produce the requirements an
 |---|---|---|
 | Product Owner and Engineering Manager | Human (the candidate) | Owns scope and decisions; approves stories and design at explicit gates |
 | Planning AI | Claude (cloud) | Analysis, options and trade-offs, drafting stories, design, and tasks; researching tools and versions |
-| Coding AI | qwen3-coder:30b via Cline and Ollama (local) | Implements small tasks against approved stories and this design |
+| Coding AI | qwen2.5-coder:14b via Aider and Ollama (local) | Implements small tasks against approved stories and this design |
 
 Two principles shaped the process:
 
@@ -24,7 +24,7 @@ Two principles shaped the process:
 | Concurrency strategy | Explained the check-then-insert race and compared exclusion constraints, row locking, advisory locks, and SERIALIZABLE | Asked for a MySQL comparison; the AI added row locking and a slot table, including the REPEATABLE READ snapshot trap. Decision: stay on PostgreSQL (ADR-002) |
 | API and errors | Proposed the 400/404/409/422 taxonomy, RFC 7807 errors, idempotency keys, cancel as an action | Accepted |
 | Process design | Proposed a layered contract (stories, AC, design, tasks, frozen acceptance tests) for a weaker local coding model | Adopted; reframed as the EM's workflow with the PO |
-| Tool selection | Checked the model name and found "Qwen3.5 Coder" does not exist (`qwen3-coder:30b` does) | Chose qwen3-coder:30b; later added Cline. The AI adjusted the process (Plan mode, manual commits, frozen-file check) |
+| Tool selection | Checked the model name and found "Qwen3.5 Coder" does not exist (`qwen3-coder:30b` does). Diagnosed why Cline made no file changes with a smaller model, and adapted the rules and tasks for Aider | Chose qwen3-coder:30b and Cline; when the 30B model did not fit in memory, switched to qwen2.5-coder:14b, then to Aider after the agent reported edits it never made |
 | User stories | Drafted 12 stories with fixture data and exact expected values, so each AC maps to one test with no interpretation | Reviewed as PO (below) |
 | This design | Drafted all sections and ADRs from the approved stories | Pending EM approval |
 
@@ -35,7 +35,7 @@ Two principles shaped the process:
 | A 409 conflict returns up to 3 alternative slots, with a next-day fallback | Removed. The UI shows availability; on conflict the customer just picks again (ADR-006) | Simpler API, one source of truth for availability, and the UX was already covered by the availability view |
 | Multi-time-zone support: `timestamptz`, a dealership time zone, DST-safe slot stepping | Removed. Single time zone, Vietnam only (ADR-003) | The business has no cross-border customers. Removing it eliminated a whole class of bugs and test cases |
 | Daily availability only | Added a weekly view (US-09), kept the daily one, and required `weekStart` to be a Monday | Matches how customers choose a time. Rejecting non-Monday dates keeps behavior explicit for the coding model |
-| Aider as the coding harness | Cline | The candidate's preference; the design is tool-agnostic and Aider remains the fallback |
+| Aider as the coding harness | Cline first, then back to Aider | Cline was the candidate's preference; with the smaller model that fits the laptop, Aider's plain-text edits proved more reliable than Cline's tool calls. The stories, design, and tasks needed no change |
 | Maven as the build tool | Gradle (Kotlin DSL) | EM preference; the design was updated in one change (v0.2) with no effect on behavior |
 
 ## 4. Gaps the AI surfaced that the human accepted

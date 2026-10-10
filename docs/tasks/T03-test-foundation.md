@@ -1,6 +1,6 @@
 # T03: Fixture data, clock, and test base classes
 
-**Story:** E-01 (AC-E01.4, AC-E01.5, AC-E01.6) · **Type:** single task
+**Story:** E-01 (AC-E01.4, AC-E01.5, AC-E01.6) · **Type:** single task, two Aider sessions
 
 ## Goal
 
@@ -24,7 +24,13 @@ Every later test depends on this task: one fixture dataset shared by the `dev` p
 | Create | `src/test/java/com/keyloop/scheduler/support/IntegrationTest.java` |
 | Create | `src/test/java/com/keyloop/scheduler/support/AppointmentSeeder.java` |
 | Create | `src/test/java/com/keyloop/scheduler/FoundationTest.java` |
-| Modify | the Initializr Testcontainers configuration class, only to use image `postgres:17` |
+
+## Sessions
+
+| Session | Editable files | Check |
+|---|---|---|
+| 1 | `R__fixture_data.sql`, `application-dev.yml`, `ClockConfig.java`, `Fixture.java` | `/test .\gradlew.bat compileTestJava --console=plain`; EM compares fixture IDs by eye |
+| 2 | `MutableClock.java`, `IntegrationTest.java`, `AppointmentSeeder.java`, `FoundationTest.java` (session 1 files read-only) | the "Done when" command below |
 
 ## Specification
 

@@ -1,33 +1,54 @@
 # T01: Build setup and Spring Boot 4 check
 
-**Story:** E-01 (AC-E01.1) · **Type:** single task
+**Story:** E-01 (AC-E01.1) · **Type:** single task, two steps (one Aider session each)
 
 ## Goal
 
-Make the Initializr build ready for the project: a version catalog, readable test output, consistent line endings, and a confirmed Spring Boot 4 dependency set.
+Turn the Initializr build into the agreed setup: Gradle Kotlin DSL with a version catalog, a lean Testcontainers configuration, readable test output, and the Vietnam time zone for every JVM the build starts.
 
-## Read first
+---
 
-- `build.gradle.kts`, `settings.gradle.kts`, `gradle/wrapper/gradle-wrapper.properties`
-- `docs/system-design/07-technology-choices.md` (only the "Spring Boot 4 notes" table)
+## Step 1: Kotlin DSL and version catalog
 
-## Files
+**Editable files:** `build.gradle`, `build.gradle.kts` (new), `settings.gradle`, `settings.gradle.kts` (new), `gradle/libs.versions.toml` (new)
+**Read-only:** this task file
 
-| Action | File |
-|---|---|
-| Create | `gradle/libs.versions.toml` |
-| Modify | `build.gradle.kts` |
-| Create | `.gitattributes` |
-| Modify | `.gitignore` (only if `build/`, `.gradle/`, `.idea/`, `.vscode/` are missing) |
+1. Convert `settings.gradle` to `settings.gradle.kts` with the same content (`rootProject.name = "scheduler"`).
+2. Convert `build.gradle` to `build.gradle.kts`, keeping every dependency **except** `org.testcontainers:testcontainers-grafana`, which is removed.
+3. Put the plugin versions (`org.springframework.boot` 4.1.1, `io.spring.dependency-management` 1.1.7) in `gradle/libs.versions.toml` under `[versions]` and `[plugins]`, and use `alias(libs.plugins.xxx)` in `build.gradle.kts`. Dependencies managed by Spring Boot stay without versions.
+4. Keep the Java toolchain at 21.
+5. Configure tests and `bootRun`:
 
-## Steps
+   ```kotlin
+   tasks.withType<Test> {
+       useJUnitPlatform()
+       jvmArgs("-Duser.timezone=Asia/Ho_Chi_Minh")
+       testLogging {
+           events("failed")
+           exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.SHORT
+       }
+   }
 
-1. Move every explicitly versioned dependency and plugin into `gradle/libs.versions.toml`, and reference them as `libs.xxx` in `build.gradle.kts`. Do not change versions. Dependencies managed by the Spring Boot plugin stay without versions.
-2. Configure the Java toolchain to 21.
-3. Configure `tasks.test`:
-   - `useJUnitPlatform()`
-   - `testLogging { events("failed"); exceptionFormat = TestExceptionFormat.SHORT }`
-4. Create `.gitattributes`:
+   tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+       jvmArgs("-Duser.timezone=Asia/Ho_Chi_Minh")
+   }
+   ```
+
+6. Empty `build.gradle` and `settings.gradle`. The EM deletes them after the step: Gradle fails if both the Groovy and Kotlin files exist.
+
+**Watch for (EM):** the dependency list matches the old file minus `testcontainers-grafana`; no version numbers in `build.gradle.kts`.
+
+**Check (EM, after deleting the two Groovy files):** `.\gradlew.bat compileJava --console=plain` passes.
+
+---
+
+## Step 2: Lean Testcontainers configuration and line endings
+
+**Editable files:** `src/test/java/com/keyloop/scheduler/TestcontainersConfiguration.java`, `.gitattributes`
+**Read-only:** this task file, `build.gradle.kts`
+
+1. In `TestcontainersConfiguration`, remove the `LgtmStackContainer` bean and its imports. Change the PostgreSQL image to `postgres:17`.
+2. Replace `.gitattributes` with:
 
    ```text
    * text=auto
@@ -36,13 +57,11 @@ Make the Initializr build ready for the project: a version catalog, readable tes
    *.bat text eol=crlf
    ```
 
-5. Check the dependency list against `.clinerules` §4. Report any Spring Boot 3 style coordinates you find. Do not change them without approval.
+**Test:** `/test .\gradlew.bat build --console=plain`
 
-## Watch for (EM)
-
-- No version numbers left in `build.gradle.kts`.
-- No dependencies added or removed.
+If the test log shows OpenTelemetry export connection warnings, leave them. T17 configures exporting.
 
 ## Done when
 
-`.\gradlew.bat build --console=plain` passes.
+- `.\gradlew.bat build` passes with only `build.gradle.kts` and `settings.gradle.kts` present.
+- No `grafana` references remain in the project.

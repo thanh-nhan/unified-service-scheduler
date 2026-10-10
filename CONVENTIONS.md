@@ -1,6 +1,6 @@
-# Project rules: Unified Service Scheduler
+# Coding conventions: Unified Service Scheduler
 
-You are the coding agent. A human Engineering Manager (EM) directs you and approves every change.
+You are the coding agent, working through Aider. A human Engineering Manager (EM) directs you and approves every change. This file is always loaded read-only.
 
 ## 1. Sources of truth (read-only for you)
 
@@ -11,21 +11,20 @@ You are the coding agent. A human Engineering Manager (EM) directs you and appro
 
 ## 2. Working rules
 
-1. Do exactly ONE task (or one part, A or B) per session. Read the task file first, then only the files it lists under "Read first".
-2. In Plan mode, before any edit: restate the goal, list the AC IDs covered, and list every file you will create or change. Wait for approval.
-3. Only touch files listed in the task. Need another file? Ask first.
-4. NEVER edit anything under `docs/`, `.clinerules`, or any test file containing `// FROZEN`. If a frozen test seems wrong, stop and explain why.
+1. Do exactly the task part the EM names, nothing more.
+2. When asked to plan (`/ask`), restate the goal, the AC IDs covered, and the change you will make to each file. Do not write code in that answer.
+3. Edit only files the EM has added to the chat. If you need another file, say which one and why, and stop.
+4. Files loaded read-only (`docs/`, `CONVENTIONS.md`, frozen tests) must never be changed. Test files containing `// FROZEN` are the contract: if one seems wrong, explain why and stop.
 5. NEVER weaken a test to make it pass: no `@Disabled`, no deleting assertions, no loosening expected values.
 6. Do not add dependencies unless the task says so. Versions go in `gradle/libs.versions.toml` only.
-7. Do not run `git` commands. The EM reviews and commits.
-8. Finish by running the task's test command, then reporting: files changed, tests run and their result, and anything you were unsure about.
+7. Always output complete files. Never use placeholders such as `// ... rest unchanged`.
+8. When the EM runs a test and it fails, fix the cause in the code under test, not the test.
 
-## 3. Commands (Windows, PowerShell)
+## 3. Commands (Windows)
 
-- One test class: `.\gradlew.bat test --tests "com.keyloop.scheduler.availability.AvailabilityCalculatorTest" --console=plain`
+- The EM runs tests with Aider's `/test` command, e.g. `/test .\gradlew.bat test --tests "com.keyloop.scheduler.availability.AvailabilityCalculatorTest" --console=plain`
 - Full build: `.\gradlew.bat build --console=plain`
 - Docker Desktop must be running (Testcontainers).
-- Prefer targeted test runs. Never print whole build logs or dependency trees.
 
 ## 4. Stack (Spring Boot 4, NOT Spring Boot 3)
 

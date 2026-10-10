@@ -1,73 +1,106 @@
 # Implementation tasks
 
-**Status:** Ready · **Version:** 0.1 · **Date:** 2026-10-09
+**Status:** Ready · **Version:** 0.2 · **Date:** 2026-10-10 (switched to Aider + qwen2.5-coder:14b; large tasks split)
 **Baseline:** user stories v0.4, system design v0.2 (both approved)
 
-Tasks are sized for **qwen3-coder:30b in Cline with a 32k context**: one task touches a handful of files, reads at most about 6k tokens of documents, and ends with a single test command.
+Tasks are sized for **qwen2.5-coder:14b in Aider with a 16k context**: one task part edits a handful of small files, reads at most about 5k tokens of documents, and ends with a single test command.
 
-## Workflow per task
+## One-time setup (EM)
+
+1. Install Aider: `python -m pip install aider-install`, then `aider-install`.
+2. Point Aider at Ollama: `setx OLLAMA_API_BASE http://127.0.0.1:11434` (open a new terminal afterwards).
+3. `ollama pull qwen2.5-coder:14b`.
+4. The repo root already has `.aider.conf.yml` (model, whole-file edits, no auto-commits, `CONVENTIONS.md` always loaded) and `.aider.model.settings.yml` (16k context).
+5. Add to `.gitignore`: `.aider.chat.history.md`, `.aider.input.history`, `.aider.tags.cache.v*/`. Keep a copy of the chat history before deleting it: it is evidence for the AI narrative.
+6. Delete the old `.clinerules` file.
+
+## Workflow per task part
 
 ```mermaid
 flowchart LR
-    A["EM: new Cline task<br/>(fresh context)"] --> B["Plan mode:<br/>agent restates goal,<br/>AC IDs, file list"]
-    B -->|"EM checks vs task file"| C["Act mode:<br/>agent implements"]
-    B -->|"wrong plan"| B
-    C --> D["Agent runs the<br/>task's test command"]
-    D --> E["EM reviews diff,<br/>runs frozen-file check"]
-    E -->|"issues"| C
-    E --> F["EM commits<br/>one task = one commit"]
+    A["EM: start Aider with<br/>the task's files"] --> B["/read the task<br/>and its docs"]
+    B --> C["/ask: agent restates<br/>goal, AC IDs, changes"]
+    C -->|"EM checks vs task file"| D["Agent writes code"]
+    C -->|"wrong plan"| C
+    D --> E["/test the task's<br/>test command"]
+    E -->|"fails"| D
+    E --> F["EM reviews git diff,<br/>frozen-file check"]
+    F --> G["EM commits<br/>one part = one commit"]
 ```
 
-### 1. Start the task
+### 1. Start a fresh session
 
-Open a **new** Cline task for every task part, so earlier work never fills the context. Use this prompt:
+Start Aider once per task part, so earlier work never fills the context. Pass the files the task's **Files** table lists as editable (Aider creates missing ones):
+
+```powershell
+aider src/main/java/com/keyloop/scheduler/availability/AvailabilityService.java src/main/java/com/keyloop/scheduler/availability/AvailabilityController.java
+```
+
+Then load the task and its "Read first" files **read-only**:
 
 ```text
-Task: docs/tasks/<FILE>.md, part <A|B>.
-Read that task file first, then only the files listed under "Read first".
-In Plan mode: restate the goal, list the AC IDs covered, and list every file you will create or change. Then wait for my approval.
+/read-only docs/tasks/T09-us02-daily-availability.md docs/user-stories/US-02-check-availability.md
 ```
 
-### 2. Review the plan (EM)
+Aider can only edit files added as editable. Docs and frozen tests loaded with `/read-only` cannot be changed, which enforces the contract mechanically.
 
-Check the plan against the task file: correct AC IDs, no files outside the list, no extra dependencies, and the critical rules for that task (each task lists them under "Watch for"). Correct the plan in chat before switching to Act mode.
+### 2. Plan, then code
 
-### 3. Review the result (EM)
+```text
+/ask We are doing part B of the task file. Restate the goal, list the AC IDs covered, and describe the change you will make to each editable file. Do not write code yet.
+```
 
-- The task's test command passes. At the end of each phase, run `.\gradlew.bat build`.
-- The diff contains only the files the task names.
-- **Frozen-file check** (Git Bash or PowerShell):
+Check the answer against the task file and its "Watch for" list. Correct it in chat, then:
+
+```text
+Implement part B as planned.
+```
+
+### 3. Test
+
+Use the task's test command through `/test`. On failure, Aider shows the output to the model, which then attempts a fix:
+
+```text
+/test .\gradlew.bat test --tests "com.keyloop.scheduler.acceptance.DailyAvailabilityAcceptanceTest" --console=plain
+```
+
+If the model fails the same test three times in a row, stop. Start a fresh session, or split the step further, and log it.
+
+### 4. Review (EM)
+
+- `git diff --stat`: only the files the task names have changed.
+- **Frozen-file check.** For a part B task this must print nothing:
 
   ```bash
-  git status --porcelain -- docs .clinerules src/test/java/com/keyloop/scheduler/acceptance
+  git status --porcelain -- docs CONVENTIONS.md src/test/java/com/keyloop/scheduler/acceptance
   ```
 
-  For a part B task this must print nothing, except files the task explicitly allows.
-- Read the "Watch for" list in the task and confirm each point in the code.
+- Confirm each point under "Watch for" in the code.
+- At the end of each phase, run `.\gradlew.bat build`.
 
-### 4. Commit (EM)
+### 5. Commit (EM)
 
 One task part per commit:
 
 ```text
 feat(US-03): auto-assign technician and bay [AC-03.1..03.10]
 
-AI-Assisted: qwen3-coder:30b via Cline
+AI-Assisted: qwen2.5-coder:14b via Aider
 Reviewed-by: EM
 ```
 
-Use `test(US-03): acceptance tests (frozen)` for part A, and `chore(...)` / `build(...)` for foundation tasks.
+Use `test(US-03): acceptance tests (frozen)` for part A, and `build(...)` / `chore(...)` for foundation tasks.
 
-### 5. Log what happened
+### 6. Log what happened
 
-Add a line to [`docs/ai-collaboration-log.md`](../ai-collaboration-log.md) whenever the agent did something wrong, surprising, or notably good. This log is the raw material for the README's AI Collaboration Narrative and the video.
+Add a line to [`docs/ai-collaboration-log.md`](../ai-collaboration-log.md) whenever the agent did something wrong, surprising, or notably good.
 
 ## Test-first: parts A and B
 
-Every story task has two parts, run as **separate** Cline tasks:
+Every story task has two parts, run as **separate** Aider sessions:
 
 - **Part A: acceptance tests.** The agent writes one test per AC from the story file. They compile but fail (red). The EM reviews each test against its AC line by line, fixes any mismatch, then adds `// FROZEN: approved by EM <date>` as the first line of the file and commits. The tests are now the contract.
-- **Part B: implementation.** A fresh agent session implements until the frozen tests pass, without changing them.
+- **Part B: implementation.** A fresh session, with the frozen tests loaded read-only, implements until the frozen tests pass, without changing them.
 
 Splitting the parts means the agent that writes the code never decides what "correct" means.
 
@@ -76,20 +109,20 @@ Splitting the parts means the agent that writes the code never decides what "cor
 | ID | Task | Story | Parts | Phase |
 |---|---|---|---|---|
 | [T00](T00-project-skeleton.md) | Generate the project skeleton (EM, no agent) | E-01 | n/a | 0 Foundation |
-| [T01](T01-build-setup.md) | Build setup and Spring Boot 4 check | E-01 | single | 0 |
+| [T01](T01-build-setup.md) | Kotlin DSL, version catalog, lean test containers | E-01 | steps 1, 2 | 0 |
 | [T02](T02-schema.md) | Database schema migrations | E-01 | single | 0 |
-| [T03](T03-test-foundation.md) | Fixture data, clock, test base classes | E-01 | single | 0 |
+| [T03](T03-test-foundation.md) | Fixture data, clock, test base classes | E-01 | sessions 1, 2 | 0 |
 | [T04](T04-runtime-config.md) | Runtime configuration, Dockerfile, Compose | E-01 | single | 0 |
-| [T05](T05-errors-and-request-id.md) | Error model, date-time parsing, request ID | E-02 (partly) | single | 0 |
+| [T05](T05-errors-and-request-id.md) | Error model, date-time parsing, request ID | E-02 (partly) | sessions 1, 2 | 0 |
 | [T06](T06-catalog-and-customer-entities.md) | Catalog and customer entities | US-01 prep | single | 1 Reference data |
 | [T07](T07-us01-reference-data.md) | Browse dealerships and service types | US-01 | A, B | 1 |
 | [T08](T08-availability-calculator.md) | Scheduling rules and availability calculator (pure) | US-02 prep | single | 2 Availability |
 | [T09](T09-us02-daily-availability.md) | Daily availability | US-02 | A, B | 2 |
 | [T10](T10-us09-weekly-availability.md) | Weekly availability | US-09 | A, B | 2 |
 | [T11](T11-appointment-persistence.md) | Appointment entity, allocation queries, constraint helper | US-03 prep | single | 3 Booking |
-| [T12](T12-us03-book.md) | Book an appointment | US-03 | A, B | 3 |
+| [T12](T12-us03-book.md) | Book an appointment | US-03 | A, B1, B2 | 3 |
 | [T13](T13-us04-validation.md) | Booking validation order | US-04 | A, B | 3 |
-| [T14](T14-us05-concurrency-idempotency.md) | Concurrency and idempotency | US-05 | A, B | 3 |
+| [T14](T14-us05-concurrency-idempotency.md) | Concurrency and idempotency | US-05 | A, B1, B2 | 3 |
 | [T15](T15-us06-us07-view-cancel.md) | View and cancel | US-06, US-07 | A, B | 3 |
 | [T16](T16-us08-list.md) | List my appointments | US-08 | A, B | 4 Hardening |
 | [T17](T17-e02-observability.md) | Observability | E-02 | A, B | 4 |

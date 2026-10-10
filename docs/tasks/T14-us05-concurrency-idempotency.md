@@ -60,6 +60,15 @@ Rules:
 | Modify | `booking/BookingService.java`, `booking/BookingController.java` (return 200 for a replay, 201 for a new booking) |
 | Create | `booking/BookingResult.java` (record: appointment + `boolean replayed`) |
 
+**Sessions:**
+
+| Session | Scope | Tests that must pass |
+|---|---|---|
+| B1 | `IdempotencyService`, `BookingResult`, step 2a replay in `BookingService`, 200 vs 201 in `BookingController` | AC-05.3, AC-05.4, AC-05.6 |
+| B2 | Violation handling in the attempt loop of `BookingService` (rules 5 and 6) | all of `ReliableBookingAcceptanceTest`, 3 runs in a row |
+
+Run a single AC with `--tests "com.keyloop.scheduler.acceptance.ReliableBookingAcceptanceTest" --console=plain` and read only the failing names.
+
 **Specification:** follow 04 §4 pseudocode exactly: step 2a before existence checks; after ANY `DataIntegrityViolationException`, look up the key first, then decide by constraint name; vehicle constraint → 409 `VEHICLE_ALREADY_BOOKED`; technician or bay constraint → retry; unknown constraint → rethrow; after 3 lost races → 409 `HIGH_CONTENTION`.
 
 **Watch for (EM):**

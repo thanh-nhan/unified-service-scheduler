@@ -40,6 +40,15 @@ Rules:
 | Create | `booking/dto/BookAppointmentRequest.java`, `booking/dto/AppointmentResponse.java` (+ nested records for references) |
 | Create | `booking/AppointmentMapper.java` |
 
+**Sessions:**
+
+| Session | Editable files | Test |
+|---|---|---|
+| B1 | `BookingCommand`, `NoCapacityException`, `RequestHasher`, `BookingTransaction`, `AppointmentMapper`, `dto/*`, new `src/test/java/com/keyloop/scheduler/booking/BookingTransactionTest.java` | `/test .\gradlew.bat test --tests "com.keyloop.scheduler.booking.BookingTransactionTest" --console=plain` |
+| B2 | `BookingService`, `BookingController` (B1 files and the frozen tests read-only) | the "Done when" command below |
+
+`BookingTransactionTest` (extends `IntegrationTest`): with no appointments, `tryAllocateAndInsert` for C1/V1, OIL_CHANGE, 09:30 stores an appointment with T1 and B1; with T1 and T2 both busy (seeded), it throws `NoCapacityException` with `NO_QUALIFIED_TECHNICIAN_AVAILABLE`.
+
 **Scope of this part:** steps 1, 3–9 of 04 §2 with the full attempt loop, but **without idempotency replay** (T14 adds it; the key is still required and stored, and `request_hash` is computed with `RequestHasher` from 04 §5, created here as `booking/RequestHasher.java`). Validation order is tested in T13, but implement the order from 04 §2 now.
 
 **Specification highlights:**
