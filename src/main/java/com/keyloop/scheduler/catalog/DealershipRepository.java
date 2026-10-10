@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface DealershipRepository extends JpaRepository<Dealership, UUID> {
@@ -12,4 +13,7 @@ public interface DealershipRepository extends JpaRepository<Dealership, UUID> {
     @EntityGraph(attributePaths = "openingHours")
     @Query("select d from Dealership d order by d.name asc")
     List<Dealership> findAllWithOpeningHoursOrderByName();
+
+    @EntityGraph(attributePaths = "openingHours")
+    Optional<Dealership> findWithOpeningHoursById(UUID id);
 }
