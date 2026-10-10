@@ -1,8 +1,8 @@
 import org.gradle.api.JavaVersion
 
 plugins {
-    alias(libs.plugins.spring-boot) apply false
-    alias(libs.plugins.dependency-management) apply false
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.dependency.management)
     id("java")
 }
 
@@ -44,6 +44,11 @@ dependencies {
 tasks.named<Test>("test") {
     useJUnitPlatform()
     jvmArgs("-Duser.timezone=Asia/Ho_Chi_Minh")
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.SHORT
+        // showStandardStreams = true
+    }
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {

@@ -1,0 +1,12 @@
+# Aider configuration for this repository (see docs/tasks/README.md)
+model: ollama_chat/qwen2.5-coder:14b
+edit-format: whole            # whole-file edits: most reliable for a 14B model; our files are small
+auto-commits: false           # the EM reviews the diff and commits
+dirty-commits: false
+gitignore: false              # .gitignore is maintained by hand
+auto-lint: false
+map-tokens: 1024              # small repo map to save context
+read:
+  - CONVENTIONS.md            # always loaded, read-only
+analytics-disable: true
+check-update: false

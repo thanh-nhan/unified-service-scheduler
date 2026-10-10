@@ -1,0 +1,7 @@
+# Context window Aider requests from Ollama for this model.
+# 16k fits a laptop with limited memory. If `ollama ps` shows headroom, raise to 32768.
+- name: ollama_chat/qwen2.5-coder:14b
+  edit_format: whole
+  use_repo_map: true
+  extra_params:
+    num_ctx: 16384
