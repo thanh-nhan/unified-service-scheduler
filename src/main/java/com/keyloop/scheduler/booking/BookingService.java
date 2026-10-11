@@ -24,6 +24,7 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -46,12 +47,13 @@ public class BookingService {
     private final AllocationQueries allocation;
     private final BookingTransaction bookingTransaction;
     private final IdempotencyService idempotency;
+    private final BookingMetrics metrics;
     private final Clock clock;
 
     public BookingService(CustomerRepository customers, VehicleRepository vehicles,
                           DealershipRepository dealerships, ServiceTypeRepository serviceTypes,
                           AllocationQueries allocation, BookingTransaction bookingTransaction,
-                          IdempotencyService idempotency, Clock clock) {
+                          IdempotencyService idempotency, BookingMetrics metrics, Clock clock) {
         this.customers = customers;
         this.vehicles = vehicles;
         this.dealerships = dealerships;
@@ -59,10 +61,55 @@ public class BookingService {
         this.allocation = allocation;
         this.bookingTransaction = bookingTransaction;
         this.idempotency = idempotency;
+        this.metrics = metrics;
         this.clock = clock;
     }
 
+    /** What the {@code booking.completed} event reports beyond the outcome. */
+    private static final class Trace {
+        int attempts;
+        boolean replayed;
+        String serviceTypeCode;
+        String appointmentId;
+    }
+
+    /**
+     * Runs the booking and emits exactly one {@code booking.completed} event and one outcome metric,
+     * whether the booking succeeds, is rejected, or an unexpected exception escapes.
+     */
     public BookingResult book(BookAppointmentRequest request, String idempotencyKey) {
+        long startedAt = System.nanoTime();
+        Trace trace = new Trace();
+        String outcome = ErrorCode.INTERNAL_ERROR.name();
+        try {
+            BookingResult result = doBook(request, idempotencyKey, trace);
+            outcome = BookingMetrics.CONFIRMED;
+            trace.replayed = result.replayed();
+            trace.appointmentId = String.valueOf(result.appointment().getId());
+            return result;
+        } catch (ApiException e) {
+            outcome = e.code().name();
+            throw e;
+        } finally {
+            Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
+            metrics.recordOutcome(outcome, elapsed);
+            var event = log.atInfo().setMessage("booking.completed")
+                    .addKeyValue("outcome", outcome)
+                    .addKeyValue("dealershipId", String.valueOf(request.dealershipId()))
+                    .addKeyValue("attempts", trace.attempts)
+                    .addKeyValue("durationMs", elapsed.toMillis())
+                    .addKeyValue("replayed", trace.replayed);
+            if (trace.serviceTypeCode != null) {
+                event = event.addKeyValue("serviceTypeCode", trace.serviceTypeCode);
+            }
+            if (trace.appointmentId != null) {
+                event = event.addKeyValue("appointmentId", trace.appointmentId);
+            }
+            event.log();
+        }
+    }
+
+    private BookingResult doBook(BookAppointmentRequest request, String idempotencyKey, Trace trace) {
         // Step 1 (shape) is partly done by bean validation; the strict date-time parse is here.
         LocalDateTime start = LocalDateTimes.parse("startTime", request.startTime());
 
@@ -95,6 +142,7 @@ public class BookingService {
                 .orElseThrow(() -> new ApiException(ErrorCode.DEALERSHIP_NOT_FOUND));
         ServiceType serviceType = serviceTypes.findById(request.serviceTypeId())
                 .orElseThrow(() -> new ApiException(ErrorCode.SERVICE_TYPE_NOT_FOUND));
+        trace.serviceTypeCode = serviceType.getCode();
 
         // Step 4
         if (!vehicle.belongsTo(customer.getId())) {
@@ -120,11 +168,12 @@ public class BookingService {
         }
 
         // Step 9
-        return attemptLoop(command);
+        return attemptLoop(command, trace);
     }
 
-    private BookingResult attemptLoop(BookingCommand command) {
+    private BookingResult attemptLoop(BookingCommand command, Trace trace) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            trace.attempts = attempt;
             try {
                 return BookingResult.created(bookingTransaction.tryAllocateAndInsert(command));
             } catch (NoCapacityException e) {
@@ -141,7 +190,7 @@ public class BookingService {
                     case "ex_appointment_vehicle_overlap" ->
                             throw new ApiException(ErrorCode.VEHICLE_ALREADY_BOOKED);
                     case "ex_appointment_technician_overlap", "ex_appointment_bay_overlap" ->
-                            log.info("Booking attempt {} lost a race on {}", attempt, constraint);
+                            conflictRetry(constraint, attempt);
                     default -> throw e;
                 }
             } catch (PessimisticLockingFailureException e) {
@@ -155,10 +204,18 @@ public class BookingService {
                 if (replay.isPresent()) {
                     return BookingResult.replay(replay.get());
                 }
-                log.info("Booking attempt {} lost a race to a deadlock", attempt);
+                conflictRetry("deadlock", attempt);
             }
         }
         throw new ApiException(ErrorCode.HIGH_CONTENTION);
+    }
+
+    private void conflictRetry(String constraint, int attempt) {
+        metrics.recordConflictRetry(constraint);
+        log.atInfo().setMessage("booking.conflict.retry")
+                .addKeyValue("constraint", constraint)
+                .addKeyValue("attempt", attempt)
+                .log();
     }
 
     private BookingResult replayOrThrow(BookingCommand command, ApiException conflict) {

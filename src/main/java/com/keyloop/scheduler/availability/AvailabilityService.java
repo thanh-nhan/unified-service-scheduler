@@ -8,12 +8,15 @@ import com.keyloop.scheduler.catalog.ServiceType;
 import com.keyloop.scheduler.catalog.ServiceTypeRepository;
 import com.keyloop.scheduler.common.error.ApiException;
 import com.keyloop.scheduler.common.error.ErrorCode;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,19 +39,36 @@ public class AvailabilityService {
     private final DealershipRepository dealerships;
     private final ServiceTypeRepository serviceTypes;
     private final AvailabilityQueries queries;
+    private final MeterRegistry meterRegistry;
     private final Clock clock;
 
     public AvailabilityService(DealershipRepository dealerships, ServiceTypeRepository serviceTypes,
-                               AvailabilityQueries queries, Clock clock) {
+                               AvailabilityQueries queries, MeterRegistry meterRegistry, Clock clock) {
         this.dealerships = dealerships;
         this.serviceTypes = serviceTypes;
         this.queries = queries;
+        this.meterRegistry = meterRegistry;
         this.clock = clock;
     }
 
     /** Availability for each date in [fromDate, toDateExclusive), using a fixed number of queries. */
     public RangeAvailability availability(UUID dealershipId, UUID serviceTypeId,
                                           LocalDate fromDate, LocalDate toDateExclusive) {
+        long startedAt = System.nanoTime();
+        try {
+            return calculate(dealershipId, serviceTypeId, fromDate, toDateExclusive);
+        } finally {
+            String range = fromDate.plusDays(1).equals(toDateExclusive) ? "day" : "week";
+            Timer.builder("scheduler.availability.duration")
+                    .tag("range", range)
+                    .publishPercentileHistogram()
+                    .register(meterRegistry)
+                    .record(Duration.ofNanos(System.nanoTime() - startedAt));
+        }
+    }
+
+    private RangeAvailability calculate(UUID dealershipId, UUID serviceTypeId,
+                                        LocalDate fromDate, LocalDate toDateExclusive) {
         Dealership dealership = dealerships.findWithOpeningHoursById(dealershipId)
                 .orElseThrow(() -> new ApiException(ErrorCode.DEALERSHIP_NOT_FOUND));
         ServiceType serviceType = serviceTypes.findById(serviceTypeId)

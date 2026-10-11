@@ -19,3 +19,25 @@ management:
     web:
       exposure:
         include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+      show-components: always
+  tracing:
+    sampling:
+      probability: 1.0
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          # Trace export is off unless OTEL_TRACING_EXPORT_ENABLED=true (OTLP endpoint via standard OTEL_* variables).
+          enabled: ${OTEL_TRACING_EXPORT_ENABLED:false}
+  otlp:
+    metrics:
+      export:
+        # Prometheus scraping is the metrics path; OTLP metric push stays off unless enabled.
+        enabled: ${OTEL_METRICS_EXPORT_ENABLED:false}
