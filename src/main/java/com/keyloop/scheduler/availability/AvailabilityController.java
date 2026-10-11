@@ -9,7 +9,13 @@ import com.keyloop.scheduler.availability.dto.WeeklyAvailabilityResponse;
 import com.keyloop.scheduler.common.error.ApiException;
 import com.keyloop.scheduler.common.error.ApiException.FieldError;
 import com.keyloop.scheduler.common.error.ErrorCode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@Tag(name = "Availability", description = "Bookable start times for a service type")
 @RequestMapping("/api/v1/dealerships/{dealershipId}/availability")
 public class AvailabilityController {
 
@@ -35,6 +42,11 @@ public class AvailabilityController {
         this.clock = clock;
     }
 
+    @Operation(summary = "Available slots for one day")
+    @ApiResponse(responseCode = "400", description = "Malformed date or service type id",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Dealership or service type not found",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping
     public DailyAvailabilityResponse daily(
             @PathVariable UUID dealershipId,
@@ -47,6 +59,12 @@ public class AvailabilityController {
                 day.slots().stream().map(SlotResponse::from).toList());
     }
 
+    @Operation(summary = "Available slots for a week",
+            description = "weekStart must be a Monday; defaults to the current week.")
+    @ApiResponse(responseCode = "400", description = "Malformed parameters, or weekStart is not a Monday",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Dealership or service type not found",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping("/weekly")
     public WeeklyAvailabilityResponse weekly(
             @PathVariable UUID dealershipId,

@@ -29,6 +29,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     implementation("org.postgresql:postgresql")
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
@@ -44,6 +45,7 @@ dependencies {
 tasks.named<Test>("test") {
     useJUnitPlatform()
     jvmArgs("-Duser.timezone=Asia/Ho_Chi_Minh")
+    systemProperty("updateOpenApi", System.getProperty("updateOpenApi") ?: "false")
     testLogging {
         events("failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.SHORT

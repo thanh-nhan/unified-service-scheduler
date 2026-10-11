@@ -1,0 +1,74 @@
+### Demo sequence (AC-E03.4). Requires `docker compose up` with the dev profile.
+### Run the requests top to bottom. Change @date to a future weekday (Mon-Sat) if needed.
+
+@host = http://localhost:8080
+@dealership = 10000000-0000-0000-0000-000000000001
+@evCheck = 40000000-0000-0000-0000-000000000003
+@customerAn = 50000000-0000-0000-0000-000000000001
+@vehicleAn = 60000000-0000-0000-0000-000000000001
+@customerBinh = 50000000-0000-0000-0000-000000000002
+@vehicleBinh = 60000000-0000-0000-0000-000000000002
+@date = 2030-01-15
+@startTime = {{date}}T09:00:00
+
+### 1. List service types -> 200
+GET {{host}}/api/v1/service-types
+
+### 2. Availability -> 200
+GET {{host}}/api/v1/dealerships/{{dealership}}/availability?serviceTypeId={{evCheck}}&date={{date}}
+
+### 3. Book -> 201
+# @name book
+POST {{host}}/api/v1/appointments
+Content-Type: application/json
+Idempotency-Key: demo-booking-1
+
+{
+  "customerId": "{{customerAn}}",
+  "vehicleId": "{{vehicleAn}}",
+  "dealershipId": "{{dealership}}",
+  "serviceTypeId": "{{evCheck}}",
+  "startTime": "{{startTime}}"
+}
+
+### 4. Replay with the same key -> 200
+POST {{host}}/api/v1/appointments
+Content-Type: application/json
+Idempotency-Key: demo-booking-1
+
+{
+  "customerId": "{{customerAn}}",
+  "vehicleId": "{{vehicleAn}}",
+  "dealershipId": "{{dealership}}",
+  "serviceTypeId": "{{evCheck}}",
+  "startTime": "{{startTime}}"
+}
+
+### 5. Conflicting booking, different customer, same slot -> 409
+POST {{host}}/api/v1/appointments
+Content-Type: application/json
+Idempotency-Key: demo-booking-2
+
+{
+  "customerId": "{{customerBinh}}",
+  "vehicleId": "{{vehicleBinh}}",
+  "dealershipId": "{{dealership}}",
+  "serviceTypeId": "{{evCheck}}",
+  "startTime": "{{startTime}}"
+}
+
+### 6. Cancel the first booking -> 200
+POST {{host}}/api/v1/appointments/{{book.response.body.id}}/cancel
+
+### 7. Rebook the freed slot -> 201
+POST {{host}}/api/v1/appointments
+Content-Type: application/json
+Idempotency-Key: demo-booking-3
+
+{
+  "customerId": "{{customerBinh}}",
+  "vehicleId": "{{vehicleBinh}}",
+  "dealershipId": "{{dealership}}",
+  "serviceTypeId": "{{evCheck}}",
+  "startTime": "{{startTime}}"
+}

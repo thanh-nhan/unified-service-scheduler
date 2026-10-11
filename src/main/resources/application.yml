@@ -41,3 +41,7 @@ management:
       export:
         # Prometheus scraping is the metrics path; OTLP metric push stays off unless enabled.
         enabled: ${OTEL_METRICS_EXPORT_ENABLED:false}
+springdoc:
+  # Document only the public API; sorted keys keep docs/openapi.yaml diffs stable.
+  paths-to-match: /api/v1/**
+  writer-with-order-by-keys: true
