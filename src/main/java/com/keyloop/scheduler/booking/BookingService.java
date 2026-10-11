@@ -20,11 +20,13 @@ import com.keyloop.scheduler.customer.VehicleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Booking flow (design 04 §2). Deliberately not {@code @Transactional}: every attempt runs in its own
@@ -43,21 +45,24 @@ public class BookingService {
     private final ServiceTypeRepository serviceTypes;
     private final AllocationQueries allocation;
     private final BookingTransaction bookingTransaction;
+    private final IdempotencyService idempotency;
     private final Clock clock;
 
     public BookingService(CustomerRepository customers, VehicleRepository vehicles,
                           DealershipRepository dealerships, ServiceTypeRepository serviceTypes,
-                          AllocationQueries allocation, BookingTransaction bookingTransaction, Clock clock) {
+                          AllocationQueries allocation, BookingTransaction bookingTransaction,
+                          IdempotencyService idempotency, Clock clock) {
         this.customers = customers;
         this.vehicles = vehicles;
         this.dealerships = dealerships;
         this.serviceTypes = serviceTypes;
         this.allocation = allocation;
         this.bookingTransaction = bookingTransaction;
+        this.idempotency = idempotency;
         this.clock = clock;
     }
 
-    public Appointment book(BookAppointmentRequest request, String idempotencyKey) {
+    public BookingResult book(BookAppointmentRequest request, String idempotencyKey) {
         // Step 1 (shape) is partly done by bean validation; the strict date-time parse is here.
         LocalDateTime start = LocalDateTimes.parse("startTime", request.startTime());
 
@@ -68,6 +73,17 @@ public class BookingService {
         if (idempotencyKey.length() > MAX_KEY_LENGTH) {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, null,
                     List.of(new FieldError("Idempotency-Key", "must be at most 100 characters")));
+        }
+
+        // Step 2a: replay of an earlier successful booking, before any existence check
+        BookingCommand command = new BookingCommand(request.customerId(), request.vehicleId(),
+                request.dealershipId(), request.serviceTypeId(), start, idempotencyKey,
+                RequestHasher.hash(request.customerId(), request.vehicleId(), request.dealershipId(),
+                        request.serviceTypeId(), start));
+        Optional<Appointment> replay = idempotency.findReplay(command.customerId(), idempotencyKey,
+                command.requestHash());
+        if (replay.isPresent()) {
+            return BookingResult.replay(replay.get());
         }
 
         // Step 3
@@ -99,24 +115,27 @@ public class BookingService {
         }
         // Step 8
         if (allocation.vehicleHasOverlap(vehicle.getId(), start, end)) {
-            throw new ApiException(ErrorCode.VEHICLE_ALREADY_BOOKED);
+            // A concurrent duplicate may have committed since step 2a: its result wins over a conflict.
+            return replayOrThrow(command, new ApiException(ErrorCode.VEHICLE_ALREADY_BOOKED));
         }
 
         // Step 9
-        BookingCommand command = new BookingCommand(customer.getId(), vehicle.getId(), dealership.getId(),
-                serviceType.getId(), start, idempotencyKey,
-                RequestHasher.hash(customer.getId(), vehicle.getId(), dealership.getId(), serviceType.getId(),
-                        start));
         return attemptLoop(command);
     }
 
-    private Appointment attemptLoop(BookingCommand command) {
+    private BookingResult attemptLoop(BookingCommand command) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                return bookingTransaction.tryAllocateAndInsert(command);
+                return BookingResult.created(bookingTransaction.tryAllocateAndInsert(command));
             } catch (NoCapacityException e) {
-                throw new ApiException(e.code());
+                return replayOrThrow(command, new ApiException(e.code()));
             } catch (DataIntegrityViolationException e) {
+                // Always look the key up first: a duplicate request may have won (design 04 §4, rule 5).
+                Optional<Appointment> replay = idempotency.findReplay(command.customerId(),
+                        command.idempotencyKey(), command.requestHash());
+                if (replay.isPresent()) {
+                    return BookingResult.replay(replay.get());
+                }
                 String constraint = ConstraintViolations.constraintName(e).orElse("");
                 switch (constraint) {
                     case "ex_appointment_vehicle_overlap" ->
@@ -125,9 +144,27 @@ public class BookingService {
                             log.info("Booking attempt {} lost a race on {}", attempt, constraint);
                     default -> throw e;
                 }
+            } catch (PessimisticLockingFailureException e) {
+                // Two inserts that conflict on technician and bay in opposite order deadlock; PostgreSQL
+                // aborts one. That is a lost race like any other, not a failure (not in design 04 §4).
+                if (!ConstraintViolations.isDeadlock(e)) {
+                    throw e;
+                }
+                Optional<Appointment> replay = idempotency.findReplay(command.customerId(),
+                        command.idempotencyKey(), command.requestHash());
+                if (replay.isPresent()) {
+                    return BookingResult.replay(replay.get());
+                }
+                log.info("Booking attempt {} lost a race to a deadlock", attempt);
             }
         }
         throw new ApiException(ErrorCode.HIGH_CONTENTION);
+    }
+
+    private BookingResult replayOrThrow(BookingCommand command, ApiException conflict) {
+        return idempotency.findReplay(command.customerId(), command.idempotencyKey(), command.requestHash())
+                .map(BookingResult::replay)
+                .orElseThrow(() -> conflict);
     }
 
     private static DailyHours hoursFor(Dealership dealership, LocalDateTime start) {

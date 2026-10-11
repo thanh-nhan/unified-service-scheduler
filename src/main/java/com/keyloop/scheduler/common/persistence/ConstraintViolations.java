@@ -10,6 +10,7 @@ public final class ConstraintViolations {
 
     private static final String EXCLUSION_VIOLATION = "23P01";
     private static final String UNIQUE_VIOLATION = "23505";
+    private static final String DEADLOCK_DETECTED = "40P01";
 
     private ConstraintViolations() {
     }
@@ -26,6 +27,11 @@ public final class ConstraintViolations {
 
     public static boolean isUniqueViolation(Throwable t) {
         return hasSqlState(t, UNIQUE_VIOLATION);
+    }
+
+    /** PostgreSQL aborted this transaction as the victim of a deadlock; the work can be retried. */
+    public static boolean isDeadlock(Throwable t) {
+        return hasSqlState(t, DEADLOCK_DETECTED);
     }
 
     private static boolean hasSqlState(Throwable t, String sqlState) {

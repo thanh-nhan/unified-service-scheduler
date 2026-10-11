@@ -26,9 +26,14 @@ public class BookingController {
     public ResponseEntity<AppointmentResponse> book(
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody BookAppointmentRequest request) {
-        Appointment appointment = bookingService.book(request, idempotencyKey);
+        BookingResult result = bookingService.book(request, idempotencyKey);
+        Appointment appointment = result.appointment();
+        AppointmentResponse body = AppointmentMapper.toResponse(appointment);
+        if (result.replayed()) {
+            return ResponseEntity.ok(body);
+        }
         return ResponseEntity
                 .created(URI.create("/api/v1/appointments/" + appointment.getId()))
-                .body(AppointmentMapper.toResponse(appointment));
+                .body(body);
     }
 }
