@@ -73,7 +73,3 @@ Exposed at `/actuator/prometheus`.
 | Contention | `HIGH_CONTENTION` above 0 for 15 minutes | Ticket |
 | Readiness | Any instance not ready for 2 minutes | Page |
 | Connection pool | Pending connections above 0 for 5 minutes | Ticket |
-
-## 7. Demo
-
-The video shows: a booking with `X-Request-Id`, the matching `booking.completed` JSON log line, and `/actuator/prometheus` with the booking counters before and after the concurrency test.
