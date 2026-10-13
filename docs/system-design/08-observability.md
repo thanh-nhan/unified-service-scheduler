@@ -35,7 +35,7 @@ Exposed at `/actuator/prometheus`.
 |---|---|---|---|
 | `scheduler.booking.attempts` | Counter | `outcome` | Booking outcomes: CONFIRMED vs each rejection code |
 | `scheduler.booking.duration` | Timer with histogram | `outcome` | Booking latency, p50/p95/p99 |
-| `scheduler.booking.conflict.retries` | Counter | `constraint` | How often concurrent bookings collide |
+| `scheduler.booking.conflict.retries` | Counter | `constraint` (technician, bay, or `deadlock`) | How often concurrent bookings collide |
 | `scheduler.availability.duration` | Timer with histogram | `range` (`day`/`week`) | Availability latency |
 | `http.server.requests` | Timer (built in) | `uri`, `method`, `status` | Request rate, errors, latency per endpoint |
 | `hikaricp.connections.*` | Gauges (built in) | n/a | Connection pool saturation |

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>02-architecture.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="02-architecture">02: Architecture</h1>
+<h2 id="1-system-context">1. System context</h2>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart LR
+    owner["Vehicle owner<br/>(web or mobile client)"]
+    ops["Operations team"]
+    subgraph boundary["Unified Service Scheduler"]
+        api["Scheduler API<br/>Spring Boot service"]
+    end
+    db[("PostgreSQL")]
+    obs["Monitoring stack<br/>Prometheus, log store,<br/>trace backend"]
+
+    owner -- "HTTPS / JSON<br/>/api/v1/..." --> api
+    api -- "SQL" --> db
+    obs -- "scrapes /actuator/prometheus" --> api
+    api -- "JSON logs, OTLP traces" --> obs
+    ops -- "dashboards, alerts" --> obs
+</div></code></pre>
+<p>The MVP has no client application. Swagger UI, a curl demo script, and an <code>.http</code> file stand in for it (E-03).</p>
+<h2 id="2-containers-and-deployment">2. Containers and deployment</h2>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TB
+    client["Client<br/>(Swagger UI, curl, future UI)"]
+    lb["Load balancer<br/>(production only)"]
+    subgraph app["Scheduler API (stateless, 1..N instances)"]
+        direction TB
+        filter["Request filter<br/>X-Request-Id, MDC"]
+        ctrl["REST controllers"]
+        svc["Application services"]
+        repo["Repositories<br/>JPA + JdbcClient"]
+        act["Actuator<br/>health, prometheus"]
+        filter --> ctrl --> svc --> repo
+    end
+    pg[("PostgreSQL 17<br/>schema via Flyway<br/>exclusion constraints")]
+    prom["Prometheus"]
+    otel["OpenTelemetry collector<br/>(optional)"]
+
+    client --> lb --> filter
+    repo --> pg
+    prom --> act
+    svc -. "traces" .-> otel
+</div></code></pre>
+<table>
+<thead>
+<tr>
+<th>Environment</th>
+<th>How it runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local / reviewer</td>
+<td><code>docker compose up --build</code>: one API container and one PostgreSQL container. The <code>dev</code> profile loads the fixture data</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td><code>./gradlew build</code>: the API in-process, PostgreSQL via Testcontainers</td>
+</tr>
+<tr>
+<td>Production (described, not built)</td>
+<td>2+ API instances behind a load balancer, managed PostgreSQL with a standby replica, Prometheus and an OTLP collector</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-components">3. Components</h2>
+<p>The API is a <strong>modular monolith</strong> (ADR-001): one deployable unit, split into feature modules with strict dependency rules.</p>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart LR
+    subgraph web["HTTP layer"]
+        cat_c["CatalogController"]
+        av_c["AvailabilityController"]
+        bk_c["BookingController"]
+        cu_c["CustomerAppointmentsController"]
+    end
+    subgraph modules["Feature modules"]
+        catalog["catalog<br/>dealerships, opening hours,<br/>service types, technicians, bays"]
+        customer["customer<br/>customers, vehicles"]
+        availability["availability<br/>AvailabilityService,<br/>AvailabilityCalculator, SchedulingRules"]
+        booking["booking<br/>BookingService, BookingTransaction,<br/>CancellationService, Idempotency"]
+    end
+    common["common<br/>errors, request ID, clock,<br/>date-time parsing, constraint helper"]
+
+    cat_c --> catalog
+    av_c --> availability
+    bk_c --> booking
+    cu_c --> booking
+    availability --> catalog
+    booking --> availability
+    booking --> catalog
+    booking --> customer
+    modules --> common
+</div></code></pre>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>common.web.RequestIdFilter</code></td>
+<td>Reads or generates <code>X-Request-Id</code>, puts it in the logging context (MDC), echoes it in the response</td>
+</tr>
+<tr>
+<td><code>common.error.GlobalExceptionHandler</code></td>
+<td>Turns every exception into an RFC 7807 problem response with <code>code</code> and <code>requestId</code>. The only place that maps errors to HTTP statuses</td>
+</tr>
+<tr>
+<td><code>common.time</code></td>
+<td>Provides the <code>Clock</code> bean (Vietnam time) and strict parsing and formatting of local date-times (ADR-003)</td>
+</tr>
+<tr>
+<td><code>catalog</code></td>
+<td>Read-only reference data: dealerships, opening hours, service types, technicians, bays. Serves US-01</td>
+</tr>
+<tr>
+<td><code>customer</code></td>
+<td>Customers and vehicles. Used for existence and ownership checks</td>
+</tr>
+<tr>
+<td><code>availability.SchedulingRules</code></td>
+<td>Pure rules shared by availability and booking: 15-minute grid, opening-hours fit</td>
+</tr>
+<tr>
+<td><code>availability.AvailabilityCalculator</code></td>
+<td>Pure function: given one day's opening hours, resources, and busy intervals, returns free slots. No Spring or database code</td>
+</tr>
+<tr>
+<td><code>availability.AvailabilityService</code></td>
+<td>Loads the data for a day or a week in a fixed number of queries and calls the calculator (US-02, US-09)</td>
+</tr>
+<tr>
+<td><code>booking.BookingService</code></td>
+<td>Orchestrates a booking: validation order, idempotency replay, the retry loop, metrics and the outcome log. <strong>Not transactional</strong></td>
+</tr>
+<tr>
+<td><code>booking.BookingTransaction</code></td>
+<td>One booking attempt in one transaction: pick a technician, pick a bay, insert. Separate bean so <code>@Transactional</code> applies (04 §4)</td>
+</tr>
+<tr>
+<td><code>booking.AllocationQueries</code></td>
+<td>Native SQL (via <code>JdbcClient</code>) that selects the best free technician and bay</td>
+</tr>
+<tr>
+<td><code>booking.CancellationService</code></td>
+<td>Conditional-update cancellation (US-07)</td>
+</tr>
+<tr>
+<td><code>booking.BookingMetrics</code></td>
+<td>Micrometer counters and timers for booking outcomes (E-02)</td>
+</tr>
+<tr>
+<td>Flyway migrations</td>
+<td>Own the schema, including the exclusion constraints that guarantee correctness</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-package-structure">4. Package structure</h2>
+<p>The coding model must follow this layout exactly.</p>
+<pre class="hljs"><code><div>com.keyloop.scheduler
+├── SchedulerApplication.java
+├── common
+│   ├── error        ErrorCode (enum: code + HTTP status), ApiException, GlobalExceptionHandler
+│   ├── web          RequestIdFilter
+│   ├── time         ClockConfig, LocalDateTimes (strict parse/format)
+│   └── persistence  ConstraintViolations (reads SQLState and constraint name)
+├── catalog
+│   ├── Dealership, OpeningHours, ServiceType, Technician, ServiceBay   (JPA entities)
+│   ├── Skill, BayType                                                 (enums)
+│   ├── *Repository                                                    (Spring Data JPA)
+│   ├── CatalogService, CatalogController
+│   └── dto/                                                           (records)
+├── customer
+│   ├── Customer, Vehicle, CustomerRepository, VehicleRepository
+├── availability
+│   ├── SchedulingRules, AvailabilityCalculator, Slot, BusyInterval    (pure, no Spring)
+│   ├── AvailabilityService, AvailabilityController
+│   └── dto/
+└── booking
+    ├── Appointment, AppointmentStatus, AppointmentRepository
+    ├── AllocationQueries                                              (JdbcClient, native SQL)
+    ├── BookingService, BookingTransaction, BookingOutcome
+    ├── CancellationService, BookingMetrics, RequestHasher
+    ├── BookingController, CustomerAppointmentsController
+    └── dto/
+</div></code></pre>
+<p><strong>Dependency rules</strong> (enforced by an ArchUnit test if time allows):</p>
+<ol>
+<li>Controllers call services only, never repositories.</li>
+<li>Module dependencies follow the arrows in §3. <code>catalog</code>, <code>customer</code>, and <code>common</code> depend on no feature module. No cycles.</li>
+<li>Classes marked <em>pure</em> have no Spring annotations, no database access, and no <code>LocalDateTime.now()</code> (time is passed in), so they can be unit tested exhaustively.</li>
+<li>Entities never leave the service layer. Controllers return DTO records.</li>
+</ol>
+<h2 id="5-data-flow">5. Data flow</h2>
+<h3 id="request-lifecycle-all-endpoints">Request lifecycle (all endpoints)</h3>
+<ol>
+<li><code>RequestIdFilter</code> sets <code>X-Request-Id</code> and the MDC <code>requestId</code>.</li>
+<li>The controller binds and validates the request (Bean Validation, strict date-time parsing). Shape errors become <strong>400</strong>.</li>
+<li>The service applies business rules in the order given by the stories, using repositories. Business-rule errors are thrown as <code>ApiException(ErrorCode)</code>.</li>
+<li><code>GlobalExceptionHandler</code> maps any exception to a problem response. Unexpected exceptions become <strong>500</strong> with no internal details, and are logged with a stack trace.</li>
+<li>Micrometer records <code>http.server.requests</code> and, for bookings, the booking metrics. The trace span closes.</li>
+</ol>
+<h3 id="flow-1-customer-picks-a-time-us-09-us-02">Flow 1: Customer picks a time (US-09, US-02)</h3>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    autonumber
+    participant C as Client
+    participant A as AvailabilityController
+    participant S as AvailabilityService
+    participant DB as PostgreSQL
+    participant K as AvailabilityCalculator
+    C->>A: GET /dealerships/{id}/availability/weekly?serviceTypeId&weekStart
+    A->>S: weekly(dealershipId, serviceTypeId, weekStart)
+    S->>DB: dealership + opening hours, service type
+    S->>DB: qualified technicians, eligible bays
+    S->>DB: CONFIRMED appointments of those resources in [Mon 00:00, next Mon 00:00)
+    loop each of 7 days (in memory)
+        S->>K: calculate(day, hours, duration, resources, busy, now)
+        K-->>S: slots
+    end
+    S-->>A: WeeklyAvailability
+    A-->>C: 200 days[7] with slots
+</div></code></pre>
+<h3 id="flow-2-customer-books-us-03-us-04-us-05">Flow 2: Customer books (US-03, US-04, US-05)</h3>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    autonumber
+    participant C as Client
+    participant B as BookingService
+    participant T as BookingTransaction
+    participant DB as PostgreSQL
+    C->>B: POST /appointments + Idempotency-Key
+    B->>DB: idempotency lookup (customerId, key)
+    alt same key already succeeded
+        B-->>C: 200 original appointment (or 422 if body differs)
+    end
+    B->>DB: load customer, vehicle, dealership, service type
+    B->>B: ownership, past, grid, opening hours checks
+    B->>DB: vehicle overlap pre-check
+    loop attempt 1..3, each in a NEW transaction
+        B->>T: tryAllocateAndInsert()
+        T->>DB: best free qualified technician (least-loaded, lowest id)
+        T->>DB: lowest-id free eligible bay
+        T->>DB: INSERT appointment + flush
+        alt insert succeeds
+            T-->>B: appointment (commit)
+            B-->>C: 201 Created
+        else exclusion constraint violated (lost a race)
+            DB-->>T: SQLSTATE 23P01
+            T-->>B: rollback, retry with fresh data
+        end
+    end
+    B-->>C: 409 HIGH_CONTENTION after 3 lost races
+</div></code></pre>
+<p>Details, including every error branch, are in <a href="04-booking-and-concurrency.md">04</a>.</p>
+<h3 id="flow-3-customer-cancels-us-07">Flow 3: Customer cancels (US-07)</h3>
+<p>The client calls <code>POST /appointments/{id}/cancel</code>. <code>CancellationService</code> runs one conditional <code>UPDATE</code> (status CONFIRMED, start in the future). The row lock serializes concurrent cancels. The freed interval no longer matches the exclusion constraints' <code>WHERE status = 'CONFIRMED'</code>, so it is immediately bookable and visible in availability.</p>
+
+</body>
+</html>

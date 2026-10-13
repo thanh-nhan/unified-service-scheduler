@@ -26,8 +26,8 @@ This is the heart of the system. It covers US-03, US-04, US-05, and US-07.
 | 5 | `startTime` strictly after `LocalDateTime.now(clock)` | 422 `START_TIME_IN_PAST` |
 | 6 | `SchedulingRules.isOnGrid(startTime)` | 422 `START_TIME_NOT_ALIGNED` |
 | 7 | `SchedulingRules.fitsOpeningHours(start, end, openingHours)` | 422 `OUTSIDE_OPENING_HOURS` |
-| 8 | Vehicle has no overlapping CONFIRMED appointment | 409 `VEHICLE_ALREADY_BOOKED` |
-| 9 | Attempt loop (§4): allocate and insert | 201, or 409 `NO_QUALIFIED_TECHNICIAN_AVAILABLE` / `NO_SERVICE_BAY_AVAILABLE` / `VEHICLE_ALREADY_BOOKED` / `HIGH_CONTENTION` |
+| 8 | Vehicle has no overlapping CONFIRMED appointment | Idempotency lookup first (§4 rule 5); if no replay, 409 `VEHICLE_ALREADY_BOOKED` |
+| 9 | Attempt loop (§4): allocate and insert | 201, or 200 / 422 if a concurrent duplicate won (§4 rule 5), or 409 `NO_QUALIFIED_TECHNICIAN_AVAILABLE` / `NO_SERVICE_BAY_AVAILABLE` / `VEHICLE_ALREADY_BOOKED` / `HIGH_CONTENTION` |
 
 `end = start + serviceType.durationMinutes`. Step 2a sits before step 3 so a replay returns the original result even if, for example, the start time has since passed.
 
@@ -92,16 +92,35 @@ The selection queries are a *check*; the insert is the *act*. Two requests can b
 
 PostgreSQL's default READ COMMITTED isolation gives each statement in a new transaction a fresh view, so attempt 2 sees A's committed row. No exclusion list is needed.
 
+### When the race ends in a deadlock
+
+Exclusion constraints can also make two inserts wait for **each other**. For example, request A takes T1 and B1 while request B takes T1 and B1 at an overlapping time, and each insert has already written an index entry the other must wait for (technician for one, bay for the other). PostgreSQL's deadlock detector aborts one transaction with `SQLSTATE 40P01`.
+
+| Time | Request A | Request B |
+|---|---|---|
+| t1 | Selects T1, B1 | Selects T1, B1 (A not committed yet) |
+| t2 | `INSERT`: waits for B on one constraint | `INSERT`: waits for A on the other constraint |
+| t3 | Continues after B is aborted → `COMMIT` → 201 | Deadlock detected: `40P01`, rollback |
+| t4 | | Attempt 2 in a new transaction, sees A's row, picks other resources or gets a 409 |
+
+This is a lost race like `23P01`, so it is retried the same way. The difference is how it arrives: Spring translates `40P01` into `PessimisticLockingFailureException`, **not** `DataIntegrityViolationException`, so a loop that catches only the latter turns it into a 500. This was found by the AC-05.2 acceptance test (about 1 failure in 10 runs) during implementation, not by design review.
+
 ### Pseudocode
 
 ```text
 BookingService.book(...)                      // NOT @Transactional
-    ... steps 1–8 ...
+    ... steps 1–7 ...
+    if allocation.vehicleHasOverlap(...):                               // step 8
+        replay = idempotency.findSuccessful(customerId, key)          // rule 5
+        if replay present: return replayResult(replay, requestHash)
+        return conflict(VEHICLE_ALREADY_BOOKED)
     for attempt in 1..3:
         try:
             appointment = bookingTransaction.tryAllocateAndInsert(cmd)   // separate bean, @Transactional
             return created(appointment)                                   // 201
         catch NoCapacityException e:
+            replay = idempotency.findSuccessful(customerId, key)          // rule 5: a duplicate may have won
+            if replay present: return replayResult(replay, requestHash)   // 200 or 422
             return conflict(e.code)                                       // 409, no retry
         catch DataIntegrityViolationException e:
             replay = idempotency.findSuccessful(customerId, key)          // ALWAYS check first, see below
@@ -111,6 +130,11 @@ BookingService.book(...)                      // NOT @Transactional
                 "ex_appointment_technician_overlap",
                 "ex_appointment_bay_overlap"         -> metrics.retry(name); continue
                 default                              -> throw e            // unexpected → 500
+        catch PessimisticLockingFailureException e:
+            if not ConstraintViolations.isDeadlock(e): throw e            // only SQLSTATE 40P01
+            replay = idempotency.findSuccessful(customerId, key)          // rule 5 again
+            if replay present: return replayResult(replay, requestHash)
+            metrics.retry("deadlock"); continue                           // rule 7
     return conflict(HIGH_CONTENTION)
 
 BookingTransaction.tryAllocateAndInsert(cmd)  // @Transactional (READ COMMITTED)
@@ -125,8 +149,9 @@ BookingTransaction.tryAllocateAndInsert(cmd)  // @Transactional (READ COMMITTED)
 2. **Do not catch the constraint exception inside the transactional method.** Doing so leaves the transaction marked rollback-only and causes `UnexpectedRollbackException`.
 3. **Use `saveAndFlush`.** A plain `save` can delay the `INSERT` until commit, so the violation would surface outside the expected place.
 4. **Identify violations by SQLSTATE and constraint name**, not by message text. `ConstraintViolations` walks the cause chain to `org.postgresql.util.PSQLException` and reads `getSQLState()` (`23P01` exclusion, `23505` unique) and `getServerErrorMessage().getConstraint()`.
-5. **Check idempotency before interpreting a violation.** Two identical requests with the same key (AC-05.5) conflict on the idempotency unique key *and* on the vehicle and technician constraints. PostgreSQL does not guarantee which is reported first. Looking up the key first makes the result deterministic: the loser always replays the winner's appointment.
-6. **Maximum 3 attempts.** Conflicts are rare in normal use. The bound stops a hot slot from hammering the database.
+5. **Check idempotency before returning any conflict.** Two identical requests with the same key (AC-05.5) conflict on the idempotency unique key *and* on the vehicle and technician constraints. PostgreSQL does not guarantee which is reported first. Looking up the key first makes the result deterministic: the loser always replays the winner's appointment. The lookup runs before **every** conflict outcome, not only after a constraint violation: after a violation, after a deadlock, and before the 409s from step 8 and `NoCapacityException`. Otherwise a duplicate that commits between step 2a and step 8 makes the loser see the winner's row as an ordinary vehicle overlap or a busy technician, and it gets a 409 instead of the winner's 200 (AC-05.5 failed intermittently until this was added). The lookup is a single indexed read, so the cost is negligible.
+6. **Maximum 3 attempts.** Conflicts are rare in normal use. The bound stops a hot slot from hammering the database. Deadlock retries count towards the same 3 attempts.
+7. **Treat a deadlock as a lost race.** Catch `PessimisticLockingFailureException`, confirm `SQLSTATE 40P01` with `ConstraintViolations.isDeadlock`, apply rule 5, then retry in a new transaction. Any other locking failure is rethrown (500). The retry metric uses `constraint="deadlock"`.
 
 ### Alternatives considered
 
